@@ -1,0 +1,194 @@
+import express from "express";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
+import bcrypt from "bcrypt";
+import rateLimit from "express-rate-limit";
+import User from "../models/User.js";
+
+const router = express.Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many requests. Please wait a few minutes before trying again.",
+  },
+});
+
+router.use("/login", authLimiter);
+router.use("/register", authLimiter);
+router.use("/reset-password", authLimiter);
+router.use("/initialize", authLimiter);
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const caseInsensitiveQuery = (field, value) => ({
+  [field]: { $regex: new RegExp(`^${escapeRegex(value.trim())}$`, "i") },
+});
+
+const isAdmin = async (username) => {
+  if (!username) return false;
+  const user = await User.findOne({
+    ...caseInsensitiveQuery("username", username),
+    role: { $regex: /^Admin$/i },
+  });
+  return Boolean(user);
+};
+
+const normalizeRole = (role) => {
+  if (!role) return "";
+  if (/^admin$/i.test(role)) return "Admin";
+  if (/^user$/i.test(role)) return "User";
+  return role;
+};
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_TIME = 15 * 60 * 1000;
+
+const isAccountLocked = (user) => {
+  return user.lockUntil && user.lockUntil > Date.now();
+};
+
+const incrementLoginAttempts = async (user) => {
+  if (user.lockUntil && user.lockUntil < Date.now()) {
+    user.loginAttempts = 1;
+    user.lockUntil = null;
+  } else {
+    user.loginAttempts = (user.loginAttempts || 0) + 1;
+    if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+      user.lockUntil = new Date(Date.now() + LOCK_TIME);
+    }
+  }
+  await user.save();
+};
+
+const resetLoginAttempts = async (user) => {
+  user.loginAttempts = 0;
+  user.lockUntil = null;
+  await user.save();
+};
+
+// Setup nodemailer transporter using environment variables
+let cachedTestAccount = null;
+
+const createTransporter = async () => {
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (host && port && user && pass) {
+    // Using real SMTP
+    return nodemailer.createTransport({
+      host,
+      port: Number(port),
+      secure: Number(port) === 465, // true for 465, false for other ports
+      auth: {
+        user,
+        pass,
+      },
+      // timeouts to avoid long blocking connections
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000,
+    });
+  }
+
+  // Using Ethereal test account (cached to avoid repeated API calls)
+  if (!cachedTestAccount) {
+    console.log("Creating Ethereal test account...");
+    cachedTestAccount = await nodemailer.createTestAccount();
+    console.log("✓ Ethereal test account ready");
+  }
+
+  return nodemailer.createTransport({
+    host: cachedTestAccount.smtp.host,
+    port: cachedTestAccount.smtp.port,
+    secure: cachedTestAccount.smtp.secure,
+    auth: {
+      user: cachedTestAccount.user,
+      pass: cachedTestAccount.pass,
+    },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
+  });
+};
+
+const sendVerificationEmail = async (to, username, token) => {
+  try {
+    const transporter = await createTransporter();
+
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5175";
+    const verifyLink = `${clientUrl}/verify?token=${token}`;
+
+    const info = await transporter.sendMail({
+      from:
+        process.env.FROM_EMAIL ||
+        process.env.SMTP_USER ||
+        "noreply@example.com",
+      to,
+      subject: "Verify your account",
+      text: `Hello ${username},\n\nThanks for registering. Please verify your email by visiting the link below:\n\n${verifyLink}\n\nYour username is ${username}.\n\nIf you didn't request this, ignore this message.`,
+      html: `<p>Hello ${username},</p><p>Thanks for registering. Please verify your email by clicking the link below:</p><p><a href="${verifyLink}">${verifyLink}</a></p><p>Your username is <strong>${username}</strong>.</p><p>If you didn't request this, ignore this message.</p>`,
+    });
+
+    if (!process.env.SMTP_HOST && cachedTestAccount) {
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.info("✓ Test email sent - Preview URL:", previewUrl);
+      return {
+        success: true,
+        previewUrl,
+        isTest: true,
+        testAccountEmail: cachedTestAccount.user,
+      };
+    }
+
+    console.info(`✓ Verification email sent to ${to}`);
+    return { success: true, isTest: false };
+  } catch (e) {
+    console.error("✗ Failed to send verification email:", e.message);
+    return { success: false, error: e.message };
+  }
+};
+
+const sendApprovalEmail = async (to, username) => {
+  try {
+    const transporter = await createTransporter();
+
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5175";
+    const loginLink = `${clientUrl}/login`;
+
+    const info = await transporter.sendMail({
+      from:
+        process.env.FROM_EMAIL ||
+        process.env.SMTP_USER ||
+        "noreply@example.com",
+      to,
+      subject: "Account approved!",
+      text: `Hello ${username},\n\nCongratulations! Your account has been approved by an administrator. You can now log in to the NGO Beneficiary Management System.\n\nLogin here: ${loginLink}\n\nUsername: ${username}\n\nIf you have any questions, please contact the administrator.`,
+      html: `<p>Hello ${username},</p><p>Congratulations! Your account has been <strong>approved</strong> by an administrator.</p><p>You can now log in to the NGO Beneficiary Management System:</p><p><a href="${loginLink}">Click here to login</a></p><p><strong>Username:</strong> ${username}</p><p>If you have any questions, please contact the administrator.</p>`,
+    });
+
+    if (!process.env.SMTP_HOST && cachedTestAccount) {
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.info("✓ Approval email sent - Preview URL:", previewUrl);
+      return {
+        success: true,
+        previewUrl,
+        isTest: true,
+        testAccountEmail: cachedTestAccount.user,
+      };
+    }
+
+    console.info(`✓ Approval email sent to ${to}`);
+    return { success: true, isTest: false };
+  } catch (e) {
+    console.error("✗ Failed to send approval email:", e.message);
+    return { success: false, error: e.message };
+  }
+};
+
+// ... rest of the file continues in the same way
