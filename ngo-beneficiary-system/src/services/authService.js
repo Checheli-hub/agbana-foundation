@@ -16,24 +16,6 @@ import {
   logError,
 } from "../utils/errorHandler.js";
 
-import {
-  addStaffUser,
-  authenticateUser,
-  demoteStaffUser,
-  findStaffUser,
-  isEmailTaken,
-  isUsernameTaken,
-  loadStaffUsers,
-  promoteStaffUser,
-  saveStaffUsers,
-  updateStaffUser,
-} from "./userService.js";
-import {
-  handleFetchResponse,
-  parseErrorMessage,
-  logError,
-} from "../utils/errorHandler.js";
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 const hasBackend = () => Boolean(API_BASE_URL);
@@ -315,87 +297,6 @@ export async function updateUserAccount(username, updates) {
   const updatedUsers = updateStaffUser(users, username, updates);
   saveStaffUsers(updatedUsers);
   return { users: updatedUsers };
-}
-
-const hasBackend = () => Boolean(API_BASE_URL);
-
-async function requestBackend(path, options) {
-  try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      ...options,
-    });
-
-    return await handleFetchResponse(response);
-  } catch (error) {
-    logError(error, `Auth Request: ${path}`);
-    const message = parseErrorMessage(error);
-    const err = new Error(message);
-    err.originalError = error;
-    throw err;
-  }
-}
-
-export async function signIn({ username, email, password, role }) {
-  if (hasBackend()) {
-    return requestBackend("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ username, email, password, role }),
-    });
-  }
-
-  const users = loadStaffUsers();
-  const matchedUser = authenticateUser(users, username, email, role, password);
-  if (!matchedUser) {
-    throw new Error("Invalid credentials. Please try again.");
-  }
-
-  return {
-    username: matchedUser.username,
-    role: matchedUser.role,
-  };
-}
-
-export async function registerUser({ username, email, password }) {
-  if (hasBackend()) {
-    return requestBackend("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        username,
-        email,
-        password,
-        role: "User",
-      }),
-    });
-  }
-
-  const users = loadStaffUsers();
-
-  if (isEmailTaken(users, email)) {
-    throw new Error("This email is already in use. Use a different email.");
-  }
-
-  if (isUsernameTaken(users, username)) {
-    throw new Error("This username is already registered. Choose another one.");
-  }
-
-  const newUser = {
-    username,
-    email,
-    password,
-    role: "User",
-  };
-
-  const updatedUsers = addStaffUser(users, newUser);
-  saveStaffUsers(updatedUsers);
-
-  return {
-    user: newUser,
-    users: updatedUsers,
-  };
 }
 
 export async function getUsers() {
