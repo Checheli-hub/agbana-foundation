@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useLocalStorage } from "./hooks/useLocalStorage.jsx";
 import { useSessionStorage } from "./hooks/useSessionStorage.jsx";
@@ -40,6 +40,13 @@ export default function App() {
     "ngo-beneficiaries",
     [],
   );
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1,
+  });
+  const [isLoadingBeneficiaries, setIsLoadingBeneficiaries] = useState(false);
   const [currentUser, setCurrentUser] = useSessionStorage(
     "ngo-current-user",
     "",
@@ -58,11 +65,12 @@ export default function App() {
     let isMounted = true;
 
     const loadPage = async (page) => {
-      const result = await fetchBeneficiariesPaginated(page, 20);
+      const result = await fetchBeneficiariesPaginated(page, pagination.limit);
       return result;
     };
 
-    const loadAllPages = async () => {
+    const loadFirstPage = async () => {
+      setIsLoadingBeneficiaries(true);
       try {
         const firstPage = await loadPage(1);
         if (!isMounted) return;
@@ -71,38 +79,46 @@ export default function App() {
           setBeneficiaries(firstPage.beneficiaries);
         }
 
-        const totalPages = firstPage?.pagination?.totalPages || 1;
-        if (totalPages <= 1) return;
-
-        const pageRequests = [];
-        for (let page = 2; page <= totalPages; page += 1) {
-          pageRequests.push(loadPage(page));
-        }
-
-        const remainingPages = await Promise.all(pageRequests);
-        if (!isMounted) return;
-
-        const extraItems = remainingPages.reduce((all, pageResult) => {
-          if (pageResult?.beneficiaries) {
-            return [...all, ...pageResult.beneficiaries];
-          }
-          return all;
-        }, []);
-
-        if (extraItems.length) {
-          setBeneficiaries((current) => [...current, ...extraItems]);
+        if (firstPage?.pagination) {
+          setPagination(firstPage.pagination);
         }
       } catch (error) {
         console.error("Failed to load beneficiaries", error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingBeneficiaries(false);
+        }
       }
     };
 
-    loadAllPages();
+    loadFirstPage();
 
     return () => {
       isMounted = false;
     };
-  }, [setBeneficiaries]);
+  }, [pagination.limit, setBeneficiaries]);
+
+  const loadMoreBeneficiaries = async () => {
+    if (pagination.page >= pagination.totalPages) return;
+    setIsLoadingBeneficiaries(true);
+    try {
+      const nextPage = pagination.page + 1;
+      const result = await fetchBeneficiariesPaginated(
+        nextPage,
+        pagination.limit,
+      );
+      if (result?.beneficiaries) {
+        setBeneficiaries((current) => [...current, ...result.beneficiaries]);
+      }
+      if (result?.pagination) {
+        setPagination(result.pagination);
+      }
+    } catch (error) {
+      console.error("Failed to load more beneficiaries", error);
+    } finally {
+      setIsLoadingBeneficiaries(false);
+    }
+  };
 
   useEffect(() => {
     if (currentUser && staffUsers.length === 0) {
@@ -188,6 +204,9 @@ export default function App() {
                     beneficiaries={beneficiaries}
                     setBeneficiaries={setBeneficiaries}
                     currentRole={currentRole}
+                    pagination={pagination}
+                    loadMoreBeneficiaries={loadMoreBeneficiaries}
+                    isLoadingBeneficiaries={isLoadingBeneficiaries}
                   />
                 </RequireAuth>
               }

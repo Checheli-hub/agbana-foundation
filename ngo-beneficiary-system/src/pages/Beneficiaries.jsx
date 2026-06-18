@@ -9,7 +9,6 @@ import {
   updateBeneficiary,
   deleteBeneficiary,
   importBeneficiariesFromFile,
-  fetchAllBeneficiaries,
 } from "../services/beneficiaryService.js";
 import { loadFromStorage, saveToStorage } from "../utils/storage.js";
 
@@ -17,6 +16,9 @@ export default function Beneficiaries({
   beneficiaries,
   setBeneficiaries,
   currentRole,
+  pagination = { page: 1, limit: 20, total: 0, totalPages: 1 },
+  loadMoreBeneficiaries,
+  isLoadingBeneficiaries = false,
 }) {
   const [searchText, setSearchText] = useState("");
   const [editingBeneficiary, setEditingBeneficiary] = useState(null);
@@ -56,8 +58,9 @@ export default function Beneficiaries({
     return newBeneficiaries.filter(matcher);
   }, [newBeneficiaries, searchText]);
 
+  const totalKnown = pagination?.total || beneficiaries.length;
   const summary = {
-    total: beneficiaries.length,
+    total: totalKnown,
     newCount: totalNew,
     pastCount: pastBeneficiaries.length,
     calledCount: beneficiaries.filter(
@@ -410,6 +413,20 @@ export default function Beneficiaries({
             }
             showEmpowermentType
           />
+          {pagination.page < pagination.totalPages && (
+            <div className="load-more-row">
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={loadMoreBeneficiaries}
+                disabled={isLoadingBeneficiaries}
+              >
+                {isLoadingBeneficiaries
+                  ? "Loading more beneficiaries..."
+                  : `Load more (${beneficiaries.length} of ${pagination.total})`}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
