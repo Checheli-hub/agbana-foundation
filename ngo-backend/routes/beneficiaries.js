@@ -62,9 +62,13 @@ router.get("/", async (req, res) => {
 
     const total = await Beneficiary.countDocuments();
     const beneficiaries = await Beneficiary.find()
+      .select(
+        "fullName phone passport category empowermentType dateAdded called calledAt",
+      )
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     res.json({
       beneficiaries: beneficiaries.map(formatBeneficiary),
@@ -331,9 +335,13 @@ router.get("/search/query", async (req, res) => {
 
     const total = await Beneficiary.countDocuments(filter);
     const beneficiaries = await Beneficiary.find(filter)
+      .select(
+        "fullName phone passport category empowermentType dateAdded called calledAt",
+      )
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean();
 
     res.json({
       beneficiaries: beneficiaries.map(formatBeneficiary),
