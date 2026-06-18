@@ -34,14 +34,21 @@ if (process.env.NODE_ENV === "production" && !SESSION_SECRET) {
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow non-browser requests (no origin) such as curl, server-to-server
+      // Allow Postman, curl, server-to-server requests
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("CORS policy: origin not allowed"));
+
+      // Allow only trusted origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("Blocked CORS origin:", origin);
+
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 app.use(express.json({ limit: "10mb" }));
