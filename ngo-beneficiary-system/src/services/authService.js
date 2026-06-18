@@ -196,6 +196,20 @@ export async function restoreUser(username) {
   throw new Error("Restore requires backend support.");
 }
 
+export async function updateUserAccount(username, updates) {
+  if (hasBackend()) {
+    return requestBackend("/auth/update", {
+      method: "POST",
+      body: JSON.stringify({ username, updates }),
+    });
+  }
+
+  const users = loadStaffUsers();
+  const updatedUsers = updateStaffUser(users, username, updates);
+  saveStaffUsers(updatedUsers);
+  return { users: updatedUsers };
+}
+
 export async function resetPassword({ username, email, role, newPassword }) {
   if (hasBackend()) {
     return requestBackend("/auth/reset-password", {
