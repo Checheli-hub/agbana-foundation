@@ -144,9 +144,8 @@ export default function Beneficiaries({
     setIsImporting(true);
 
     try {
-      await importBeneficiariesFromFile(file);
-      const refreshed = await fetchAllBeneficiaries();
-      setBeneficiaries(refreshed);
+      const importedItems = await importBeneficiariesFromFile(file);
+      setBeneficiaries((items) => [...importedItems, ...items]);
       showToast("Past beneficiaries imported successfully.");
     } catch (error) {
       showToast(error.message || "Unable to import beneficiaries.", "error");

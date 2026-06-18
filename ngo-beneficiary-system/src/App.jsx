@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useLocalStorage } from "./hooks/useLocalStorage.jsx";
 import { useSessionStorage } from "./hooks/useSessionStorage.jsx";
-import { fetchAllBeneficiaries } from "./services/beneficiaryService.js";
+import { fetchBeneficiariesPaginated } from "./services/beneficiaryService.js";
 import { getUsers } from "./services/authService.js";
 import Sidebar from "./components/Sidebar.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -55,11 +55,53 @@ export default function App() {
         : null;
 
   useEffect(() => {
-    fetchAllBeneficiaries()
-      .then(setBeneficiaries)
-      .catch((error) => {
+    let isMounted = true;
+
+    const loadPage = async (page) => {
+      const result = await fetchBeneficiariesPaginated(page, 20);
+      return result;
+    };
+
+    const loadAllPages = async () => {
+      try {
+        const firstPage = await loadPage(1);
+        if (!isMounted) return;
+
+        if (firstPage?.beneficiaries) {
+          setBeneficiaries(firstPage.beneficiaries);
+        }
+
+        const totalPages = firstPage?.pagination?.totalPages || 1;
+        if (totalPages <= 1) return;
+
+        const pageRequests = [];
+        for (let page = 2; page <= totalPages; page += 1) {
+          pageRequests.push(loadPage(page));
+        }
+
+        const remainingPages = await Promise.all(pageRequests);
+        if (!isMounted) return;
+
+        const extraItems = remainingPages.reduce((all, pageResult) => {
+          if (pageResult?.beneficiaries) {
+            return [...all, ...pageResult.beneficiaries];
+          }
+          return all;
+        }, []);
+
+        if (extraItems.length) {
+          setBeneficiaries((current) => [...current, ...extraItems]);
+        }
+      } catch (error) {
         console.error("Failed to load beneficiaries", error);
-      });
+      }
+    };
+
+    loadAllPages();
+
+    return () => {
+      isMounted = false;
+    };
   }, [setBeneficiaries]);
 
   useEffect(() => {
