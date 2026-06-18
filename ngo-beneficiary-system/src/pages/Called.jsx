@@ -22,6 +22,7 @@ export default function Called({
   const [searchText, setSearchText] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [toast, setToast] = useState({ message: "", variant: "success" });
+  const [attendLoadingId, setAttendLoadingId] = useState(null);
   const deleteTimerRef = useRef(null);
   const undoItemRef = useRef(null);
   const toastTimerRef = useRef(null);
@@ -113,9 +114,9 @@ export default function Called({
   };
 
   const handleAttend = async (beneficiary) => {
+    setAttendLoadingId(beneficiary.id);
     try {
       const updatedItem = await updateBeneficiary(beneficiary.id, {
-        ...beneficiary,
         category: "Past Beneficiary",
       });
       setBeneficiaries(
@@ -129,6 +130,8 @@ export default function Called({
         error.message || "Unable to mark beneficiary as attended.",
         "error",
       );
+    } finally {
+      setAttendLoadingId(null);
     }
   };
 
@@ -240,6 +243,7 @@ export default function Called({
         <BeneficiaryTable
           beneficiaries={filteredCallLog}
           onAttend={currentRole === "Admin" ? handleAttend : undefined}
+          attendLoadingId={attendLoadingId}
           onDelete={currentRole === "Admin" ? handleDelete : undefined}
           attendLabel="Attended"
           showEmpowermentType

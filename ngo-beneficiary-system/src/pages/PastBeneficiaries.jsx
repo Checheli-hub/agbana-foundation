@@ -167,7 +167,6 @@ export default function PastBeneficiaries({
       if (!beneficiary) return;
 
       const updatedItem = await updateBeneficiary(id, {
-        ...beneficiary,
         empowermentType,
       });
       setBeneficiaries(

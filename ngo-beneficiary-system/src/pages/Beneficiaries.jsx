@@ -24,6 +24,8 @@ export default function Beneficiaries({
   const [pendingDelete, setPendingDelete] = useState(null);
   const [toast, setToast] = useState({ message: "", variant: "success" });
   const [isImporting, setIsImporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [callLoadingId, setCallLoadingId] = useState(null);
   const fileInputRef = useRef(null);
   const deleteTimerRef = useRef(null);
   const undoItemRef = useRef(null);
@@ -162,10 +164,10 @@ export default function Beneficiaries({
   };
 
   const handleSave = async (payload) => {
+    setIsSaving(true);
     try {
       if (editingBeneficiary) {
         const updatedItem = await updateBeneficiary(editingBeneficiary.id, {
-          ...editingBeneficiary,
           ...payload,
         });
         setBeneficiaries(
@@ -216,6 +218,7 @@ export default function Beneficiaries({
     } catch (error) {
       showToast(error.message || "Unable to save beneficiary.", "error");
     } finally {
+      setIsSaving(false);
       setIsFormOpen(false);
       setEditingBeneficiary(null);
     }
@@ -287,9 +290,9 @@ export default function Beneficiaries({
   }, []);
 
   const handleCall = async (beneficiary) => {
+    setCallLoadingId(beneficiary.id);
     try {
       const updatedItem = await updateBeneficiary(beneficiary.id, {
-        ...beneficiary,
         called: true,
         calledAt: new Date().toISOString(),
       });
@@ -304,6 +307,8 @@ export default function Beneficiaries({
         error.message || "Unable to mark beneficiary as called.",
         "error",
       );
+    } finally {
+      setCallLoadingId(null);
     }
   };
 
@@ -397,6 +402,7 @@ export default function Beneficiaries({
             onEdit={currentRole === "Admin" ? handleEdit : undefined}
             onDelete={currentRole === "Admin" ? handleDelete : undefined}
             onCall={currentRole === "Admin" ? handleCall : undefined}
+            callLoadingId={callLoadingId}
             noDataMessage={
               searchText
                 ? "No matching new beneficiaries found."
@@ -427,8 +433,15 @@ export default function Beneficiaries({
               key={editingBeneficiary?.id || "new-beneficiary"}
               initialData={editingBeneficiary}
               submitLabel={
-                editingBeneficiary ? "Save changes" : "Add beneficiary"
+                isSaving
+                  ? editingBeneficiary
+                    ? "Saving..."
+                    : "Adding..."
+                  : editingBeneficiary
+                    ? "Save changes"
+                    : "Add beneficiary"
               }
+              isSaving={isSaving}
               onCancel={() => {
                 setIsFormOpen(false);
                 setEditingBeneficiary(null);

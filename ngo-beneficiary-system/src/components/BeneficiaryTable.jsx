@@ -7,6 +7,8 @@ export default function BeneficiaryTable({
   onCall,
   onAttend,
   onEmpowermentTypeChange,
+  callLoadingId,
+  attendLoadingId,
   attendLabel = "Attended",
   noDataMessage,
   showDateCalled,
@@ -233,8 +235,11 @@ export default function BeneficiaryTable({
                         type="button"
                         className="action-btn action-btn-secondary"
                         onClick={() => onAttend(beneficiary)}
+                        disabled={attendLoadingId === beneficiary.id}
                       >
-                        {attendLabel}
+                        {attendLoadingId === beneficiary.id
+                          ? "Saving..."
+                          : attendLabel}
                       </button>
                     ) : (
                       <span className="empty-cell">—</span>
@@ -303,22 +308,31 @@ export default function BeneficiaryTable({
                           type="button"
                           className="action-btn icon-btn action-btn-success"
                           onClick={() => onCall(beneficiary)}
-                          title="Mark as called"
+                          disabled={callLoadingId === beneficiary.id}
+                          title={
+                            callLoadingId === beneficiary.id
+                              ? "Marking as called"
+                              : "Mark as called"
+                          }
                           aria-label="Mark as called"
                         >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-hidden
-                          >
-                            <path
-                              d="M6.62 10.79a15.053 15.053 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.24 1.01l-2.2 2.21z"
-                              fill="currentColor"
-                            />
-                          </svg>
+                          {callLoadingId === beneficiary.id ? (
+                            "Calling..."
+                          ) : (
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              aria-hidden
+                            >
+                              <path
+                                d="M6.62 10.79a15.053 15.053 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.24 1.01l-2.2 2.21z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                          )}
                         </button>
                       )}
                     </div>

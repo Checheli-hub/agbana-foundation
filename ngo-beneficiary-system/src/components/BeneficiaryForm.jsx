@@ -21,6 +21,7 @@ export default function BeneficiaryForm({
   onSubmit,
   submitLabel,
   existingBeneficiaries = [],
+  isSaving = false,
 }) {
   const [formData, setFormData] = useState(() =>
     getInitialFormData(initialData),
@@ -270,7 +271,11 @@ export default function BeneficiaryForm({
         <button type="button" className="button-secondary" onClick={onCancel}>
           Cancel
         </button>
-        <button type="submit" className="button-primary" disabled={!isValid}>
+        <button
+          type="submit"
+          className="button-primary"
+          disabled={!isValid || isSaving}
+        >
           {submitLabel}
         </button>
       </div>
