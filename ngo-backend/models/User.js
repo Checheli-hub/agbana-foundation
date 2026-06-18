@@ -24,6 +24,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["Admin", "User"],
       default: "User",
+      set: (value) => {
+        if (!value) return value;
+        if (/^admin$/i.test(value)) return "Admin";
+        if (/^user$/i.test(value)) return "User";
+        return value;
+      },
     },
     isVerified: {
       type: Boolean,
