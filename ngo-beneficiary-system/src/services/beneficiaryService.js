@@ -17,6 +17,7 @@ async function requestBackend(path, options) {
     return await retryAsync(
       async () => {
         const response = await fetch(`${API_BASE_URL}${path}`, {
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
