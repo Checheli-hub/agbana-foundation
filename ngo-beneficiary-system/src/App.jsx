@@ -46,7 +46,6 @@ export default function App() {
     total: 0,
     totalPages: 1,
   });
-  const [isLoadingBeneficiaries, setIsLoadingBeneficiaries] = useState(false);
   const [currentUser, setCurrentUser] = useSessionStorage(
     "ngo-current-user",
     "",
@@ -69,8 +68,7 @@ export default function App() {
       return result;
     };
 
-    const loadFirstPage = async () => {
-      setIsLoadingBeneficiaries(true);
+    const loadAllPages = async () => {
       try {
         const firstPage = await loadPage(1);
         if (!isMounted) return;
@@ -79,46 +77,42 @@ export default function App() {
           setBeneficiaries(firstPage.beneficiaries);
         }
 
+        const totalPages = firstPage?.pagination?.totalPages || 1;
         if (firstPage?.pagination) {
           setPagination(firstPage.pagination);
         }
+
+        if (totalPages <= 1) return;
+
+        const pageRequests = [];
+        for (let page = 2; page <= totalPages; page += 1) {
+          pageRequests.push(loadPage(page));
+        }
+
+        const remainingPages = await Promise.all(pageRequests);
+        if (!isMounted) return;
+
+        const extraItems = remainingPages.reduce((all, pageResult) => {
+          if (pageResult?.beneficiaries) {
+            return [...all, ...pageResult.beneficiaries];
+          }
+          return all;
+        }, []);
+
+        if (extraItems.length) {
+          setBeneficiaries((current) => [...current, ...extraItems]);
+        }
       } catch (error) {
         console.error("Failed to load beneficiaries", error);
-      } finally {
-        if (isMounted) {
-          setIsLoadingBeneficiaries(false);
-        }
       }
     };
 
-    loadFirstPage();
+    loadAllPages();
 
     return () => {
       isMounted = false;
     };
   }, [pagination.limit, setBeneficiaries]);
-
-  const loadMoreBeneficiaries = async () => {
-    if (pagination.page >= pagination.totalPages) return;
-    setIsLoadingBeneficiaries(true);
-    try {
-      const nextPage = pagination.page + 1;
-      const result = await fetchBeneficiariesPaginated(
-        nextPage,
-        pagination.limit,
-      );
-      if (result?.beneficiaries) {
-        setBeneficiaries((current) => [...current, ...result.beneficiaries]);
-      }
-      if (result?.pagination) {
-        setPagination(result.pagination);
-      }
-    } catch (error) {
-      console.error("Failed to load more beneficiaries", error);
-    } finally {
-      setIsLoadingBeneficiaries(false);
-    }
-  };
 
   useEffect(() => {
     if (currentUser && staffUsers.length === 0) {
@@ -204,9 +198,6 @@ export default function App() {
                     beneficiaries={beneficiaries}
                     setBeneficiaries={setBeneficiaries}
                     currentRole={currentRole}
-                    pagination={pagination}
-                    loadMoreBeneficiaries={loadMoreBeneficiaries}
-                    isLoadingBeneficiaries={isLoadingBeneficiaries}
                   />
                 </RequireAuth>
               }
