@@ -198,29 +198,23 @@ router.post("/import", async (req, res) => {
 // PUT /beneficiaries/:id
 router.put("/:id", async (req, res) => {
   try {
-    const {
-      fullName,
-      phone,
-      passport,
-      category,
-      empowermentType,
-      dateAdded,
-      called,
-      calledAt,
-      // status and notes ignored on update via this endpoint
-    } = req.body;
+    const allowedFields = [
+      "fullName",
+      "phone",
+      "passport",
+      "category",
+      "empowermentType",
+      "dateAdded",
+      "called",
+      "calledAt",
+    ];
 
-    const update = {
-      fullName,
-      phone,
-      passport,
-      category,
-      empowermentType,
-      dateAdded,
-      called,
-      calledAt,
-      // leave status and notes unchanged here
-    };
+    const update = {};
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        update[field] = req.body[field];
+      }
+    }
 
     const beneficiary = await Beneficiary.findByIdAndUpdate(
       req.params.id,
