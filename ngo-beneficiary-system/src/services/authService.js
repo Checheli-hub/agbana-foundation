@@ -284,3 +284,18 @@ export async function demoteUser(username, requestedBy) {
   saveStaffUsers(updatedUsers);
   return { users: updatedUsers };
 }
+
+export async function updateUserAccount(username, updates) {
+  if (hasBackend()) {
+    return requestBackend("/auth/update", {
+      method: "POST",
+      body: JSON.stringify({ username, updates }),
+    });
+  }
+
+  const users = loadStaffUsers();
+  const updatedUsers = updateStaffUser(users, username, updates);
+  saveStaffUsers(updatedUsers);
+
+  return { users: updatedUsers };
+}
