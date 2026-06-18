@@ -19,20 +19,16 @@ import NotFound from "./pages/NotFound.jsx";
 import "./styles/global.css";
 
 function RequireAuth({ children, currentUser }) {
-  return currentUser ? children : <Navigate to="/login" replace />;
-}
-
-function isSuperAdmin(username) {
-  return (
-    String(username || "")
-      .trim()
-      .toLowerCase() === "abdulkudus yusuf"
-  );
+  const username =
+    currentUser && typeof currentUser === "object"
+      ? currentUser.username
+      : currentUser;
+  return username ? children : <Navigate to="/login" replace />;
 }
 
 function RequireAdmin({ children, currentRole, currentUser }) {
   return currentRole?.trim().toLowerCase() === "admin" &&
-    isSuperAdmin(currentUser) ? (
+    currentUser?.isSuperAdmin === true ? (
     children
   ) : (
     <Navigate to="/" replace />
@@ -50,6 +46,13 @@ export default function App() {
   );
   const [currentRole, setCurrentRole] = useSessionStorage("ngo-user-role", "");
   const [staffUsers, setStaffUsers] = useLocalStorage("ngo-staff-users", []);
+
+  const currentUserObject =
+    currentUser && typeof currentUser === "object"
+      ? currentUser
+      : currentUser
+        ? { username: currentUser, isSuperAdmin: false }
+        : null;
 
   useEffect(() => {
     fetchAllBeneficiaries()
@@ -82,9 +85,9 @@ export default function App() {
       <div className="app-shell">
         <Sidebar
           currentRole={currentRole}
-          currentUser={currentUser}
+          currentUser={currentUserObject}
           onLogout={() => {
-            setCurrentUser("");
+            setCurrentUser(null);
             setCurrentRole("");
           }}
         />
@@ -102,7 +105,7 @@ export default function App() {
                   </RequireAuth>
                 ) : (
                   <Login
-                    currentUser={currentUser}
+                    currentUser={currentUserObject}
                     setCurrentUser={setCurrentUser}
                     setCurrentRole={setCurrentRole}
                   />
@@ -176,10 +179,10 @@ export default function App() {
               element={
                 <RequireAdmin
                   currentRole={currentRole}
-                  currentUser={currentUser}
+                  currentUser={currentUserObject}
                 >
                   <AdminSettings
-                    currentUser={currentUser}
+                    currentUser={currentUserObject}
                     setCurrentUser={setCurrentUser}
                     currentRole={currentRole}
                     staffUsers={staffUsers}

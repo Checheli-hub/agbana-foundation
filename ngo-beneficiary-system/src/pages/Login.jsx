@@ -83,7 +83,10 @@ export default function Login({
         role: selectedRole,
       });
 
-      setCurrentUser(result.username);
+      setCurrentUser({
+        username: result.username,
+        isSuperAdmin: result.isSuperAdmin === true,
+      });
       setCurrentRole(result.role || selectedRole);
       if (result.users && setStaffUsers) {
         setStaffUsers(result.users);

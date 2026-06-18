@@ -23,14 +23,14 @@ export default function Sidebar({ currentRole, currentUser, onLogout }) {
       )
       .join(" ");
 
-  const isSuperAdmin = (username) =>
-    String(username || "")
-      .trim()
-      .toLowerCase() === "abdulkudus yusuf";
-
-  const displayUser = formatDisplayName(currentUser);
+  const displayUser = formatDisplayName(
+    currentUser && typeof currentUser === "object"
+      ? currentUser.username
+      : currentUser,
+  );
   const showAdminSettings =
-    currentRole?.trim().toLowerCase() === "admin" && isSuperAdmin(currentUser);
+    currentRole?.trim().toLowerCase() === "admin" &&
+    currentUser?.isSuperAdmin === true;
 
   const handleLogout = () => {
     onLogout();

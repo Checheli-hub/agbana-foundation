@@ -109,11 +109,11 @@ export async function getUsers() {
   return { users: loadStaffUsers() };
 }
 
-export async function createAdmin({ username, email, password, requestedBy }) {
+export async function createAdmin({ username, email, password }) {
   if (hasBackend()) {
     return requestBackend("/auth/admin", {
       method: "POST",
-      body: JSON.stringify({ username, email, password, requestedBy }),
+      body: JSON.stringify({ username, email, password }),
     });
   }
 
@@ -145,11 +145,11 @@ export async function createAdmin({ username, email, password, requestedBy }) {
   };
 }
 
-export async function approveUser(username, requestedBy) {
+export async function approveUser(username) {
   if (hasBackend()) {
     return requestBackend("/auth/approve", {
       method: "POST",
-      body: JSON.stringify({ username, requestedBy }),
+      body: JSON.stringify({ username }),
     });
   }
 
@@ -163,33 +163,33 @@ export async function approveUser(username, requestedBy) {
   return { users: updated };
 }
 
-export async function disapproveUser(username, requestedBy) {
+export async function disapproveUser(username) {
   if (hasBackend()) {
     return requestBackend("/auth/disapprove", {
       method: "POST",
-      body: JSON.stringify({ username, requestedBy }),
+      body: JSON.stringify({ username }),
     });
   }
 
   throw new Error("Disapprove requires backend support.");
 }
 
-export async function deleteUser(username, requestedBy) {
+export async function deleteUser(username) {
   if (hasBackend()) {
     return requestBackend("/auth/delete", {
       method: "POST",
-      body: JSON.stringify({ username, requestedBy }),
+      body: JSON.stringify({ username }),
     });
   }
 
   throw new Error("Delete requires backend support.");
 }
 
-export async function restoreUser(username, requestedBy) {
+export async function restoreUser(username) {
   if (hasBackend()) {
     return requestBackend("/auth/restore", {
       method: "POST",
-      body: JSON.stringify({ username, requestedBy }),
+      body: JSON.stringify({ username }),
     });
   }
 
@@ -257,11 +257,11 @@ export async function signOut() {
   }
 }
 
-export async function promoteUser(username, requestedBy) {
+export async function promoteUser(username) {
   if (hasBackend()) {
     return requestBackend("/auth/promote", {
       method: "POST",
-      body: JSON.stringify({ username, requestedBy }),
+      body: JSON.stringify({ username }),
     });
   }
 
@@ -271,31 +271,16 @@ export async function promoteUser(username, requestedBy) {
   return { users: updatedUsers };
 }
 
-export async function demoteUser(username, requestedBy) {
+export async function demoteUser(username) {
   if (hasBackend()) {
     return requestBackend("/auth/demote", {
       method: "POST",
-      body: JSON.stringify({ username, requestedBy }),
+      body: JSON.stringify({ username }),
     });
   }
 
   const users = loadStaffUsers();
   const updatedUsers = demoteStaffUser(users, username);
   saveStaffUsers(updatedUsers);
-  return { users: updatedUsers };
-}
-
-export async function updateUserAccount(username, updates) {
-  if (hasBackend()) {
-    return requestBackend("/auth/update", {
-      method: "POST",
-      body: JSON.stringify({ username, updates }),
-    });
-  }
-
-  const users = loadStaffUsers();
-  const updatedUsers = updateStaffUser(users, username, updates);
-  saveStaffUsers(updatedUsers);
-
   return { users: updatedUsers };
 }

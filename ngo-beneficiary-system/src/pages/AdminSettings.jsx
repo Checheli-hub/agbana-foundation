@@ -25,10 +25,10 @@ export default function AdminSettings({
   staffUsers,
   setStaffUsers,
 }) {
-  const isSuperAdmin = (username) =>
-    String(username || "")
-      .trim()
-      .toLowerCase() === "abdulkudus yusuf";
+  const currentUsername =
+    currentUser && typeof currentUser === "object"
+      ? currentUser.username
+      : currentUser;
   const navigate = useNavigate();
   const [toast, setToast] = useState({ message: "", variant: "success" });
   const [loadingStaffUsers, setLoadingStaffUsers] = useState(
@@ -39,7 +39,7 @@ export default function AdminSettings({
   const deleteTimerRef = useRef(null);
   const undoAdminRef = useRef(null);
   const currentAdmin = findStaffUser(staffUsers, {
-    username: currentUser,
+    username: currentUsername,
     role: "Admin",
   });
   const [updatedUsername, setUpdatedUsername] = useState("");
@@ -59,9 +59,9 @@ export default function AdminSettings({
 
   useEffect(() => {
     if (
-      !currentUser ||
+      !currentUsername ||
       currentRole?.trim().toLowerCase() !== "admin" ||
-      !isSuperAdmin(currentUser)
+      currentUser?.isSuperAdmin !== true
     ) {
       navigate("/", { replace: true });
       return;
@@ -170,7 +170,10 @@ export default function AdminSettings({
 
       setStaffUsers(response.users);
       if (trimmedUsername !== currentAdmin.username) {
-        setCurrentUser(trimmedUsername);
+        setCurrentUser({
+        username: trimmedUsername,
+        isSuperAdmin: currentUser?.isSuperAdmin === true,
+      });
       }
       setUpdatedPassword("");
       setConfirmUpdatedPassword("");
@@ -240,7 +243,6 @@ export default function AdminSettings({
         username: trimmedUsername,
         email: trimmedEmail,
         password: newAdminPassword,
-        requestedBy: currentUser,
       });
       setStaffUsers(response.users);
       setNewAdminUsername("");
@@ -262,7 +264,7 @@ export default function AdminSettings({
   const handlePromoteUser = async (username) => {
     resetToast();
     try {
-      const response = await promoteUser(username, currentUser);
+      const response = await promoteUser(username);
       setStaffUsers(response.users);
       setToast({
         message: `${username} has been promoted to Admin.`,
@@ -279,7 +281,7 @@ export default function AdminSettings({
   const handleApproveUser = async (username) => {
     resetToast();
     try {
-      const response = await approveUser(username, currentUser);
+      const response = await approveUser(username);
       setStaffUsers(response.users);
       setToast({ message: `${username} approved.`, variant: "success" });
     } catch (error) {
@@ -293,7 +295,7 @@ export default function AdminSettings({
   const handleDisapproveUser = async (username) => {
     resetToast();
     try {
-      const response = await disapproveUser(username, currentUser);
+      const response = await disapproveUser(username);
       setStaffUsers(response.users);
       setToast({ message: `${username} disapproved.`, variant: "success" });
 
@@ -328,7 +330,7 @@ export default function AdminSettings({
       }
 
       // Call backend delete (fire-and-forget); UI already updated
-      deleteUser(username, currentUser).catch((err) =>
+      deleteUser(username).catch((err) =>
         console.error("Backend delete failed", err),
       );
 
@@ -355,7 +357,7 @@ export default function AdminSettings({
   const handleUndoDisapprove = async (username) => {
     resetToast();
     try {
-      const response = await approveUser(username, currentUser);
+      const response = await approveUser(username);
       setStaffUsers(response.users);
       setToast({
         message: `${username} restored to approved.`,
@@ -376,7 +378,7 @@ export default function AdminSettings({
   const handleRestoreUser = async (username) => {
     resetToast();
     try {
-      const response = await restoreUser(username, currentUser);
+      const response = await restoreUser(username);
       const restoredUsers = response?.users?.length
         ? response.users
         : (await getUsers())?.users || [];
@@ -397,7 +399,7 @@ export default function AdminSettings({
   const handleDemoteAdmin = async (username) => {
     resetToast();
     try {
-      const response = await demoteUser(username, currentUser);
+      const response = await demoteUser(username);
       setStaffUsers(response.users);
       setToast({ message: `${username} demoted.`, variant: "success" });
     } catch (error) {
@@ -422,7 +424,7 @@ export default function AdminSettings({
 
     // Attempt backend restore (best-effort)
     try {
-      restoreUser(restored.username, currentUser).catch((err) =>
+      restoreUser(restored.username).catch((err) =>
         console.error("Backend restore failed", err),
       );
     } catch (e) {
@@ -437,7 +439,11 @@ export default function AdminSettings({
     (user) => user.role?.toLowerCase() === "user",
   );
 
-  if (!currentUser || currentRole !== "Admin" || !isSuperAdmin(currentUser)) {
+  if (
+    !currentUsername ||
+    currentRole !== "Admin" ||
+    currentUser?.isSuperAdmin !== true
+  ) {
     return null;
   }
 
@@ -855,7 +861,7 @@ export default function AdminSettings({
                     <strong>{user.username}</strong>
                     <p>{user.email}</p>
                   </div>
-                  {user.username !== currentUser && (
+                  {user.username !== currentUsername && (
                     <button
                       type="button"
                       className="button-secondary button-small"
