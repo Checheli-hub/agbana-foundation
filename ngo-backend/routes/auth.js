@@ -34,13 +34,11 @@ const caseInsensitiveQuery = (field, value) => ({
   [field]: { $regex: new RegExp(`^${escapeRegex(value.trim())}$`, "i") },
 });
 
-const isAdmin = async (username) => {
-  if (!username) return false;
-  const user = await User.findOne({
-    ...caseInsensitiveQuery("username", username),
-    role: { $regex: /^Admin$/i },
-  });
-  return Boolean(user);
+const getSessionUser = (req) => req.session?.user || null;
+
+const isSuperAdminSession = (req) => {
+  const user = getSessionUser(req);
+  return Boolean(user && user.role === "Admin" && user.isSuperAdmin === true);
 };
 
 const normalizeRole = (role) => {
@@ -173,6 +171,7 @@ router.post("/login", async (req, res) => {
       username: user.username,
       email: user.email,
       role: normalizedRole,
+      isSuperAdmin: Boolean(user.isSuperAdmin),
     };
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
@@ -181,6 +180,7 @@ router.post("/login", async (req, res) => {
       username: user.username,
       email: user.email,
       role: normalizedRole,
+      isSuperAdmin: Boolean(user.isSuperAdmin),
       users: allUsers.map((u) => ({
         username: u.username,
         email: u.email,
@@ -331,6 +331,7 @@ router.post("/initialize", async (req, res) => {
       role: "Admin",
       isVerified: true,
       isApproved: true,
+      isSuperAdmin: true,
       verificationToken: null,
       verificationTokenExpiry: null,
     });
@@ -353,18 +354,12 @@ router.post("/initialize", async (req, res) => {
 // POST /auth/admin
 router.post("/admin", async (req, res) => {
   try {
-    const { username, email, password, requestedBy } = req.body;
+    const { username, email, password } = req.body;
 
-    if (!requestedBy) {
-      return res
-        .status(403)
-        .json({ error: "Only an admin may create new admin accounts." });
-    }
-
-    if (!(await isAdmin(requestedBy))) {
-      return res
-        .status(403)
-        .json({ error: "Only an admin may create new admin accounts." });
+    if (!isSuperAdminSession(req)) {
+      return res.status(403).json({
+        error: "Only a super admin may create new admin accounts.",
+      });
     }
 
     if (!username || !email || !password) {
@@ -393,6 +388,7 @@ router.post("/admin", async (req, res) => {
       email: email.toLowerCase().trim(),
       password: hashedPassword,
       role: "Admin",
+      isSuperAdmin: false,
       isVerified: true,
       isApproved: true,
     });
@@ -597,18 +593,12 @@ router.get("/verify", async (req, res) => {
 // POST /auth/approve
 router.post("/approve", async (req, res) => {
   try {
-    const { username, requestedBy } = req.body;
+    const { username } = req.body;
 
-    if (!requestedBy) {
+    if (!isSuperAdminSession(req)) {
       return res
         .status(403)
-        .json({ error: "RequestedBy (admin) is required." });
-    }
-
-    if (!(await isAdmin(requestedBy))) {
-      return res
-        .status(403)
-        .json({ error: "Only an admin may approve accounts." });
+        .json({ error: "Only a super admin may approve accounts." });
     }
 
     if (!username) {
@@ -623,7 +613,7 @@ router.post("/approve", async (req, res) => {
 
     // Only set approval fields here — do not modify isVerified
     user.isApproved = true;
-    user.approvedBy = requestedBy;
+    user.approvedBy = req.session.user?.username || null;
     user.approvedAt = new Date();
     await user.save();
 
@@ -652,18 +642,12 @@ router.post("/approve", async (req, res) => {
 // POST /auth/disapprove
 router.post("/disapprove", async (req, res) => {
   try {
-    const { username, requestedBy } = req.body;
+    const { username } = req.body;
 
-    if (!requestedBy) {
+    if (!isSuperAdminSession(req)) {
       return res
         .status(403)
-        .json({ error: "RequestedBy (admin) is required." });
-    }
-
-    if (!(await isAdmin(requestedBy))) {
-      return res
-        .status(403)
-        .json({ error: "Only an admin may disapprove accounts." });
+        .json({ error: "Only a super admin may disapprove accounts." });
     }
 
     if (!username) {
@@ -706,25 +690,23 @@ router.post("/disapprove", async (req, res) => {
 // POST /auth/delete
 router.post("/delete", async (req, res) => {
   try {
-    const { username, requestedBy } = req.body;
+    const { username } = req.body;
 
-    if (!requestedBy) {
+    if (!isSuperAdminSession(req)) {
       return res
         .status(403)
-        .json({ error: "RequestedBy (admin) is required." });
-    }
-
-    if (!(await isAdmin(requestedBy))) {
-      return res
-        .status(403)
-        .json({ error: "Only an admin may delete accounts." });
+        .json({ error: "Only a super admin may delete accounts." });
     }
 
     if (!username) {
       return res.status(400).json({ error: "Username is required." });
     }
 
-    if (username.trim().toLowerCase() === requestedBy.trim().toLowerCase()) {
+    if (
+      req.session.user?.username &&
+      username.trim().toLowerCase() ===
+        req.session.user.username.trim().toLowerCase()
+    ) {
       return res.status(400).json({
         error: "You cannot delete the account currently signed in.",
       });
@@ -768,18 +750,12 @@ router.post("/delete", async (req, res) => {
 // POST /auth/restore
 router.post("/restore", async (req, res) => {
   try {
-    const { username, requestedBy } = req.body;
+    const { username } = req.body;
 
-    if (!requestedBy) {
+    if (!isSuperAdminSession(req)) {
       return res
         .status(403)
-        .json({ error: "RequestedBy (admin) is required." });
-    }
-
-    if (!(await isAdmin(requestedBy))) {
-      return res
-        .status(403)
-        .json({ error: "Only an admin may restore accounts." });
+        .json({ error: "Only a super admin may restore accounts." });
     }
 
     if (!username) {
@@ -876,16 +852,12 @@ router.post("/logout", (req, res) => {
 // POST /auth/promote
 router.post("/promote", async (req, res) => {
   try {
-    const { username, requestedBy } = req.body;
+    const { username } = req.body;
 
-    if (!requestedBy) {
+    if (!isSuperAdminSession(req)) {
       return res
         .status(403)
-        .json({ error: "Only an admin may promote users." });
-    }
-
-    if (!(await isAdmin(requestedBy))) {
-      return res.status(403).json({ error: "Only an admin may demote users." });
+        .json({ error: "Only a super admin may promote users." });
     }
 
     if (!username) {
@@ -923,14 +895,12 @@ router.post("/promote", async (req, res) => {
 // POST /auth/demote
 router.post("/demote", async (req, res) => {
   try {
-    const { username, requestedBy } = req.body;
+    const { username } = req.body;
 
-    if (!requestedBy) {
-      return res.status(403).json({ error: "Only an admin may demote users." });
-    }
-
-    if (!(await isAdmin(requestedBy))) {
-      return res.status(403).json({ error: "Only an admin may demote users." });
+    if (!isSuperAdminSession(req)) {
+      return res
+        .status(403)
+        .json({ error: "Only a super admin may demote users." });
     }
 
     if (!username) {

@@ -65,6 +65,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false,
+    },
     loginAttempts: {
       type: Number,
       default: 0,
