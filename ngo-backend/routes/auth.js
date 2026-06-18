@@ -3,6 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcrypt";
 import rateLimit from "express-rate-limit";
 import User from "../models/User.js";
+import AuditLog from "../models/AuditLog.js";
 import {
   sendVerificationEmail,
   sendApprovalEmail,
@@ -27,6 +28,35 @@ router.use("/login", authLimiter);
 router.use("/register", authLimiter);
 router.use("/reset-password", authLimiter);
 router.use("/initialize", authLimiter);
+
+const logAuditAction = async (actionType, performedBy, targetUser, targetUserEmail = null, details = null, req = null, status = "success", errorMessage = null) => {
+  try {
+    const auditEntry = new AuditLog({
+      actionType,
+      performedBy,
+      targetUser,
+      targetUserEmail,
+      details,
+      ipAddress: req?.ip || req?.connection?.remoteAddress || null,
+      userAgent: req?.get("user-agent") || null,
+      status,
+      errorMessage,
+    });
+    await auditEntry.save();
+  } catch (error) {
+    console.error("Failed to log audit action:", error);
+  }
+};
+
+const generateToken = () => crypto.randomBytes(32).toString("hex");
+
+const regenerateSession = (req) =>
+  new Promise((resolve, reject) => {
+    req.session.regenerate((err) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -167,12 +197,24 @@ router.post("/login", async (req, res) => {
     }
 
     const normalizedRole = normalizeRole(user.role);
+    const newRefreshToken = generateToken();
+    const refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const newAccessToken = generateToken();
+    const accessTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    user.refreshToken = newRefreshToken;
+    user.refreshTokenExpiry = refreshTokenExpiry;
+    await user.save();
+
+    await regenerateSession(req);
     req.session.user = {
       username: user.username,
       email: user.email,
       role: normalizedRole,
       isSuperAdmin: Boolean(user.isSuperAdmin),
     };
+    req.session.accessToken = newAccessToken;
+    req.session.accessTokenExpiry = accessTokenExpiry;
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
 
@@ -181,6 +223,10 @@ router.post("/login", async (req, res) => {
       email: user.email,
       role: normalizedRole,
       isSuperAdmin: Boolean(user.isSuperAdmin),
+      accessToken: newAccessToken,
+      accessTokenExpiry,
+      refreshToken: newRefreshToken,
+      refreshTokenExpiry,
       users: allUsers.map((u) => ({
         username: u.username,
         email: u.email,
@@ -331,7 +377,7 @@ router.post("/initialize", async (req, res) => {
       role: "Admin",
       isVerified: true,
       isApproved: true,
-      isSuperAdmin: true,
+      isSuperAdmin: false, // Prevent Super Admin creation through this endpoint
       verificationToken: null,
       verificationTokenExpiry: null,
     });
@@ -394,6 +440,8 @@ router.post("/admin", async (req, res) => {
     });
 
     await newAdmin.save();
+
+    await logAuditAction("create_admin", req.session.user?.username, newAdmin.username, newAdmin.email, `Created new admin account`, req, "success");
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
 
@@ -617,6 +665,8 @@ router.post("/approve", async (req, res) => {
     user.approvedAt = new Date();
     await user.save();
 
+    await logAuditAction("approve", req.session.user?.username, user.username, user.email, `User account approved`, req, "success");
+
     // Fire-and-forget sending of approval email so UI updates immediately
     sendApprovalEmail(user.email, user.username)
       .then((r) => console.info("Approval email result:", r))
@@ -664,6 +714,8 @@ router.post("/disapprove", async (req, res) => {
     user.approvedBy = null;
     user.approvedAt = null;
     await user.save();
+
+    await logAuditAction("disapprove", req.session.user?.username, user.username, user.email, `User account disapproved`, req, "success");
 
     // Fire-and-forget sending of disapproval email
     sendDisapprovalEmail(user.email, user.username)
@@ -728,6 +780,8 @@ router.post("/delete", async (req, res) => {
     user.deletedAt = new Date();
     await user.save();
 
+    await logAuditAction("delete", req.session.user?.username, user.username, user.email, `User account deleted`, req, "success");
+
     schedulePermanentDeletion(user._id);
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
@@ -774,6 +828,9 @@ router.post("/restore", async (req, res) => {
     user.isDeleted = false;
     user.deletedAt = null;
     await user.save();
+    
+    await logAuditAction("restore", req.session.user?.username, user.username, user.email, `User account restored`, req, "success");
+
     cancelScheduledDeletion(user._id);
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
@@ -839,14 +896,114 @@ router.post("/resend-verification", async (req, res) => {
 });
 
 // POST /auth/logout
-router.post("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: "Logout failed." });
+router.post("/logout", async (req, res) => {
+  try {
+    if (req.session.user?.email) {
+      await User.updateOne(
+        { email: req.session.user.email },
+        { refreshToken: null, refreshTokenExpiry: null },
+      );
     }
-    res.clearCookie("connect.sid");
-    res.json({ message: "Logged out successfully." });
-  });
+
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed." });
+      }
+      res.clearCookie("connect.sid");
+      res.json({ message: "Logged out successfully." });
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /auth/refresh-token
+router.post("/refresh-token", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ error: "Refresh token is required." });
+    }
+
+    const user = await User.findOne({
+      refreshToken,
+      refreshTokenExpiry: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid or expired refresh token." });
+    }
+
+    const newAccessToken = generateToken();
+    const newRefreshToken = generateToken();
+    const accessTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    const refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    user.refreshToken = newRefreshToken;
+    user.refreshTokenExpiry = refreshTokenExpiry;
+    await user.save();
+
+    await regenerateSession(req);
+    const normalizedRole = normalizeRole(user.role);
+    req.session.user = {
+      username: user.username,
+      email: user.email,
+      role: normalizedRole,
+      isSuperAdmin: Boolean(user.isSuperAdmin),
+    };
+    req.session.accessToken = newAccessToken;
+    req.session.accessTokenExpiry = accessTokenExpiry;
+
+    res.json({
+      accessToken: newAccessToken,
+      accessTokenExpiry,
+      refreshToken: newRefreshToken,
+      refreshTokenExpiry,
+      user: {
+        username: user.username,
+        email: user.email,
+        role: normalizedRole,
+        isSuperAdmin: Boolean(user.isSuperAdmin),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /auth/audit-logs (Super Admin only)
+router.get("/audit-logs", async (req, res) => {
+  try {
+    if (!isSuperAdminSession(req)) {
+      return res.status(403).json({
+        error: "Only super admin may view audit logs.",
+      });
+    }
+
+    const { limit = 100, skip = 0, actionType, performedBy, targetUser } = req.query;
+
+    const filter = {};
+    if (actionType) filter.actionType = actionType;
+    if (performedBy) filter.performedBy = new RegExp(`^${escapeRegex(performedBy.trim())}$`, "i");
+    if (targetUser) filter.targetUser = new RegExp(`^${escapeRegex(targetUser.trim())}$`, "i");
+
+    const auditLogs = await AuditLog.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    const total = await AuditLog.countDocuments(filter);
+
+    res.json({
+      auditLogs,
+      total,
+      limit: parseInt(limit),
+      skip: parseInt(skip),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // POST /auth/promote
@@ -875,6 +1032,8 @@ router.post("/promote", async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
+
+    await logAuditAction("promote", req.session.user?.username, user.username, user.email, `User promoted to Admin role`, req, "success");
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
 
@@ -916,6 +1075,8 @@ router.post("/demote", async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
+
+    await logAuditAction("demote", req.session.user?.username, user.username, user.email, `User demoted to User role`, req, "success");
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
 
