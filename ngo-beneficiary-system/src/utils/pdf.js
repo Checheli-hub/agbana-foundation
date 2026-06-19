@@ -77,7 +77,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   for (const item of beneficiaries) {
     if (y > 170) {
       doc.addPage();
-      y = 20;
+      y = rowTop;
     }
 
     x = startX;
