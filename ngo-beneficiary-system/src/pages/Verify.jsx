@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Toast from "../components/Toast.jsx";
 
 export default function Verify() {
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const requestTokenRef = useRef("");
-  const token = new URLSearchParams(location.search).get("token") || "";
+  const token = searchParams.get("token") || "";
 
   const [status, setStatus] = useState(token ? "loading" : "error");
   const [message, setMessage] = useState(
@@ -21,13 +21,20 @@ export default function Verify() {
       };
     }
 
-    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const API_BASE = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, "");
 
     const setError = (msg) => {
       if (!mounted) return;
       setStatus("error");
       setMessage(msg || "Verification failed.");
     };
+
+    if (!API_BASE) {
+      setError("Verification service is not configured.");
+      return () => {
+        mounted = false;
+      };
+    }
 
     requestTokenRef.current = token;
 

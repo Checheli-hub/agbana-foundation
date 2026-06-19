@@ -16,7 +16,8 @@ import {
   logError,
 } from "../utils/errorHandler.js";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "";
 
 const hasBackend = () => Boolean(API_BASE_URL);
 

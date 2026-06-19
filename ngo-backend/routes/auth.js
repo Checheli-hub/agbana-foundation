@@ -640,16 +640,10 @@ router.get("/verify", async (req, res) => {
       .then((r) => console.info("Welcome email result:", r))
       .catch((e) => console.error("Welcome email error:", e));
 
-    const wantsJson =
-      req.headers.accept?.includes("application/json") ||
-      req.headers["x-requested-with"] === "XMLHttpRequest";
-
-    if (!wantsJson) {
-      const clientUrl = process.env.CLIENT_URL;
-      return res.redirect(`${clientUrl}/login?verified=1`);
-    }
-
-    res.json({ message: "Email verified successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
