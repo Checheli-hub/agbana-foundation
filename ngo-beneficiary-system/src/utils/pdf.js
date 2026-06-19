@@ -30,6 +30,24 @@ function drawPlaceholderImage(doc, x, y, size = 22) {
   doc.text("Photo", x + size / 2, y - 3, { align: "center" });
 }
 
+function drawFooter(doc) {
+  const pageHeight = doc.internal.pageSize.height;
+  const pageWidth = doc.internal.pageSize.width;
+  const footerY = pageHeight - 12;
+
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text(
+    "© 2026 Agabana Foundation. All rights reserved. Website designed & developed by Cheche Tech.",
+    16,
+    footerY,
+  );
+  doc.setTextColor(0, 102, 204);
+  const linkText = "https://abdulkudus-portfolio.netlify.app/";
+  doc.textWithLink(linkText, 16, footerY + 4, { url: linkText });
+  doc.setTextColor(0);
+}
+
 const printHeaders = ["Photo", "Name", "Phone", "Category", "Date Called"];
 
 export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
@@ -70,6 +88,8 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
     x += columnWidths[index];
   });
 
+  drawFooter(doc);
+
   doc.setFont("helvetica", "normal");
   // move down to the first data row
   y = startY;
@@ -92,6 +112,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
         doc.text(header, x + 2, rowTop);
         x += columnWidths[index];
       });
+      drawFooter(doc);
       doc.setFont("helvetica", "normal");
       y = startY;
     }
@@ -193,6 +214,8 @@ export async function createPastBeneficiariesReport(
     x += columnWidths[index];
   });
 
+  drawFooter(doc);
+
   doc.setFont("helvetica", "normal");
   // move down to the first data row
   y = startY;
@@ -211,6 +234,7 @@ export async function createPastBeneficiariesReport(
         doc.text(header, x + 2, rowTop);
         x += columnWidths[index];
       });
+      drawFooter(doc);
       doc.setFont("helvetica", "normal");
       y = startY;
     }
