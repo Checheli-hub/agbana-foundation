@@ -80,8 +80,8 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 18px 20px;
+  gap: 4px;
+  padding: 14px 18px;
   margin-top: auto;
   border-top: 1px solid var(--border);
   border-radius: 18px;
@@ -89,6 +89,15 @@ a {
   color: var(--text-muted);
   font-size: 0.95rem;
   text-align: center;
+}
+
+.app-footer-copy {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.app-footer-copy span {
+  display: block;
 }
 
 .app-footer a {
