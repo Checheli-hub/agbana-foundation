@@ -247,7 +247,7 @@ export async function createPastBeneficiariesReport(
       doc.text(text, x + 2, y);
       x += columnWidths[index + 1];
     });
-    y += rowHeight;
+    y += rowHeightwHeight;
   }
 
   return doc;
