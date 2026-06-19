@@ -176,8 +176,12 @@ export const sendVerificationEmail = async (to, username, token) => {
 /**
  * Send approval email
  */
+const getClientUrl = () => {
+  return process.env.CLIENT_URL;
+};
+
 export const sendApprovalEmail = async (to, username) => {
-  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const clientUrl = getClientUrl();
   const loginLink = `${clientUrl}/login`;
 
   const text = `Hello ${username},\n\nCongratulations! Your account has been approved by an administrator. You can now log in to the NGO Beneficiary Management System.\n\nOpen or copy this URL in your browser:\n${loginLink}\n\nUsername: ${username}\n\nIf you have any questions, please contact the administrator.`;
@@ -188,7 +192,7 @@ export const sendApprovalEmail = async (to, username) => {
 };
 
 export const sendWelcomeEmail = async (to, username, isApproved) => {
-  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const clientUrl = getClientUrl();
   const loginLink = `${clientUrl}/login`;
 
   const text = isApproved
@@ -203,7 +207,7 @@ export const sendWelcomeEmail = async (to, username, isApproved) => {
 };
 
 export const sendPasswordResetEmail = async (to, username, token) => {
-  const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+  const clientUrl = getClientUrl();
   const resetLink = `${clientUrl}/reset-password?token=${token}`;
 
   const text = `Hello ${username},\n\nWe received a request to reset your password. Click the link below to choose a new one:\n\n${resetLink}\n\nIf you did not request this, please ignore this email. The link will expire in 1 hour.`;

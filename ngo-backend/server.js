@@ -22,8 +22,11 @@ const MONGODB_URI =
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // Build list of allowed client origins from env; support comma-separated list
-const rawClientUrls = process.env.CLIENT_URL || "http://localhost:5173";
-const allowedOrigins = rawClientUrls.split(",").map((s) => s.trim());
+const rawClientUrls = process.env.CLIENT_URL || "";
+const allowedOrigins = rawClientUrls
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 if (process.env.NODE_ENV === "production" && !SESSION_SECRET) {
   console.error(

@@ -29,7 +29,16 @@ router.use("/register", authLimiter);
 router.use("/reset-password", authLimiter);
 router.use("/initialize", authLimiter);
 
-const logAuditAction = async (actionType, performedBy, targetUser, targetUserEmail = null, details = null, req = null, status = "success", errorMessage = null) => {
+const logAuditAction = async (
+  actionType,
+  performedBy,
+  targetUser,
+  targetUserEmail = null,
+  details = null,
+  req = null,
+  status = "success",
+  errorMessage = null,
+) => {
   try {
     const auditEntry = new AuditLog({
       actionType,
@@ -441,7 +450,15 @@ router.post("/admin", async (req, res) => {
 
     await newAdmin.save();
 
-    await logAuditAction("create_admin", req.session.user?.username, newAdmin.username, newAdmin.email, `Created new admin account`, req, "success");
+    await logAuditAction(
+      "create_admin",
+      req.session.user?.username,
+      newAdmin.username,
+      newAdmin.email,
+      `Created new admin account`,
+      req,
+      "success",
+    );
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
 
@@ -628,7 +645,7 @@ router.get("/verify", async (req, res) => {
       req.headers["x-requested-with"] === "XMLHttpRequest";
 
     if (!wantsJson) {
-      const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+      const clientUrl = process.env.CLIENT_URL;
       return res.redirect(`${clientUrl}/login?verified=1`);
     }
 
@@ -665,7 +682,15 @@ router.post("/approve", async (req, res) => {
     user.approvedAt = new Date();
     await user.save();
 
-    await logAuditAction("approve", req.session.user?.username, user.username, user.email, `User account approved`, req, "success");
+    await logAuditAction(
+      "approve",
+      req.session.user?.username,
+      user.username,
+      user.email,
+      `User account approved`,
+      req,
+      "success",
+    );
 
     // Fire-and-forget sending of approval email so UI updates immediately
     sendApprovalEmail(user.email, user.username)
@@ -715,7 +740,15 @@ router.post("/disapprove", async (req, res) => {
     user.approvedAt = null;
     await user.save();
 
-    await logAuditAction("disapprove", req.session.user?.username, user.username, user.email, `User account disapproved`, req, "success");
+    await logAuditAction(
+      "disapprove",
+      req.session.user?.username,
+      user.username,
+      user.email,
+      `User account disapproved`,
+      req,
+      "success",
+    );
 
     // Fire-and-forget sending of disapproval email
     sendDisapprovalEmail(user.email, user.username)
@@ -780,7 +813,15 @@ router.post("/delete", async (req, res) => {
     user.deletedAt = new Date();
     await user.save();
 
-    await logAuditAction("delete", req.session.user?.username, user.username, user.email, `User account deleted`, req, "success");
+    await logAuditAction(
+      "delete",
+      req.session.user?.username,
+      user.username,
+      user.email,
+      `User account deleted`,
+      req,
+      "success",
+    );
 
     schedulePermanentDeletion(user._id);
 
@@ -828,8 +869,16 @@ router.post("/restore", async (req, res) => {
     user.isDeleted = false;
     user.deletedAt = null;
     await user.save();
-    
-    await logAuditAction("restore", req.session.user?.username, user.username, user.email, `User account restored`, req, "success");
+
+    await logAuditAction(
+      "restore",
+      req.session.user?.username,
+      user.username,
+      user.email,
+      `User account restored`,
+      req,
+      "success",
+    );
 
     cancelScheduledDeletion(user._id);
 
@@ -932,7 +981,9 @@ router.post("/refresh-token", async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Invalid or expired refresh token." });
+      return res
+        .status(401)
+        .json({ error: "Invalid or expired refresh token." });
     }
 
     const newAccessToken = generateToken();
@@ -981,12 +1032,26 @@ router.get("/audit-logs", async (req, res) => {
       });
     }
 
-    const { limit = 100, skip = 0, actionType, performedBy, targetUser } = req.query;
+    const {
+      limit = 100,
+      skip = 0,
+      actionType,
+      performedBy,
+      targetUser,
+    } = req.query;
 
     const filter = {};
     if (actionType) filter.actionType = actionType;
-    if (performedBy) filter.performedBy = new RegExp(`^${escapeRegex(performedBy.trim())}$`, "i");
-    if (targetUser) filter.targetUser = new RegExp(`^${escapeRegex(targetUser.trim())}$`, "i");
+    if (performedBy)
+      filter.performedBy = new RegExp(
+        `^${escapeRegex(performedBy.trim())}$`,
+        "i",
+      );
+    if (targetUser)
+      filter.targetUser = new RegExp(
+        `^${escapeRegex(targetUser.trim())}$`,
+        "i",
+      );
 
     const auditLogs = await AuditLog.find(filter)
       .sort({ createdAt: -1 })
@@ -1033,7 +1098,15 @@ router.post("/promote", async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
-    await logAuditAction("promote", req.session.user?.username, user.username, user.email, `User promoted to Admin role`, req, "success");
+    await logAuditAction(
+      "promote",
+      req.session.user?.username,
+      user.username,
+      user.email,
+      `User promoted to Admin role`,
+      req,
+      "success",
+    );
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
 
@@ -1076,7 +1149,15 @@ router.post("/demote", async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
-    await logAuditAction("demote", req.session.user?.username, user.username, user.email, `User demoted to User role`, req, "success");
+    await logAuditAction(
+      "demote",
+      req.session.user?.username,
+      user.username,
+      user.email,
+      `User demoted to User role`,
+      req,
+      "success",
+    );
 
     const allUsers = await User.find({ isDeleted: { $ne: true } });
 
