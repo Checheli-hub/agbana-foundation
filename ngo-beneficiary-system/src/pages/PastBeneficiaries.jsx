@@ -179,6 +179,15 @@ export default function PastBeneficiaries({
 
   const handleCancelDelete = () => setPendingDelete(null);
 
+  const handleDownloadPdf = async () => {
+    try {
+      await generatePastBeneficiariesPdf("Agbana Foundation", filtered);
+    } catch (error) {
+      console.error("Past beneficiaries PDF download failed", error);
+      showToast("Unable to download PDF. Check console for details.", "error");
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (deleteTimerRef.current) {
@@ -201,9 +210,7 @@ export default function PastBeneficiaries({
           <button
             type="button"
             className="button-secondary"
-            onClick={() =>
-              generatePastBeneficiariesPdf("Agbana Foundation", filtered)
-            }
+            onClick={handleDownloadPdf}
           >
             Download PDF
           </button>
