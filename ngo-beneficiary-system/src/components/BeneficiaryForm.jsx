@@ -10,6 +10,7 @@ const getInitialFormData = (initialData) => ({
   fullName: initialData?.fullName || "",
   phone: initialData?.phone || "",
   passport: initialData?.passport || "",
+  passportFile: null,
   category: initialData?.category || "New Beneficiary",
   dateAdded: initialData?.dateAdded || formatDateKey(new Date()),
   empowermentType: initialData?.empowermentType || "",
@@ -33,7 +34,7 @@ export default function BeneficiaryForm({
     return (
       formData.fullName.trim() &&
       isValidPhone(formData.phone) &&
-      (!requiresPassport || formData.passport) &&
+      (!requiresPassport || formData.passport || formData.passportFile) &&
       formData.dateAdded &&
       formData.empowermentType
     );
@@ -74,7 +75,11 @@ export default function BeneficiaryForm({
 
     const reader = new FileReader();
     reader.onload = () => {
-      setFormData((prev) => ({ ...prev, passport: reader.result }));
+      setFormData((prev) => ({
+        ...prev,
+        passport: reader.result,
+        passportFile: file,
+      }));
       setErrors((prev) => {
         const { passport, ...rest } = prev;
         void passport;
@@ -100,7 +105,7 @@ export default function BeneficiaryForm({
       nextErrors.phone = "Enter a valid phone number (at least 7 digits).";
     }
 
-    if (requiresPassport && !formData.passport) {
+    if (requiresPassport && !formData.passport && !formData.passportFile) {
       nextErrors.passport = "Passport photo is required for new beneficiaries.";
     }
 
@@ -153,6 +158,7 @@ export default function BeneficiaryForm({
       fullName: formData.fullName.trim(),
       phone: normalizePhone(formData.phone),
       passport: formData.passport,
+      passportFile: formData.passportFile,
       category: formData.category,
       dateAdded: formData.dateAdded,
       empowermentType: formData.empowermentType,

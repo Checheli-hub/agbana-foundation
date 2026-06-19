@@ -16,12 +16,25 @@ async function requestBackend(path, options) {
   try {
     return await retryAsync(
       async () => {
+        const headers = {
+          ...(options?.headers || {}),
+        };
+
+        if (
+          options?.body !== undefined &&
+          options?.body !== null &&
+          !(options.body instanceof FormData) &&
+          !Object.keys(headers).some(
+            (key) => key.toLowerCase() === "content-type",
+          )
+        ) {
+          headers["Content-Type"] = "application/json";
+        }
+
         const response = await fetch(`${API_BASE_URL}${path}`, {
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
           ...options,
+          headers,
         });
 
         return await handleFetchResponse(response);
@@ -111,6 +124,36 @@ export async function fetchAllBeneficiaries() {
   return [];
 }
 
+function buildBeneficiaryRequestBody(payload) {
+  if (!payload || typeof payload !== "object") {
+    return JSON.stringify(payload);
+  }
+
+  const hasFile = payload.passportFile instanceof File;
+  if (!hasBackend() || !hasFile) {
+    return JSON.stringify(payload);
+  }
+
+  const formData = new FormData();
+
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === undefined || value === null) continue;
+
+    if (key === "passportFile") {
+      formData.append("passport", value);
+      continue;
+    }
+
+    if (key === "passport" && hasFile) {
+      continue;
+    }
+
+    formData.append(key, value);
+  }
+
+  return formData;
+}
+
 export async function createBeneficiary(item) {
   if (!hasBackend()) {
     const current = localGetAllBeneficiaries();
@@ -124,7 +167,7 @@ export async function createBeneficiary(item) {
 
   return requestBackend("/beneficiaries", {
     method: "POST",
-    body: JSON.stringify(item),
+    body: buildBeneficiaryRequestBody(item),
   });
 }
 
@@ -140,7 +183,7 @@ export async function updateBeneficiary(id, updates) {
 
   return requestBackend(`/beneficiaries/${id}`, {
     method: "PUT",
-    body: JSON.stringify(updates),
+    body: buildBeneficiaryRequestBody(updates),
   });
 }
 
