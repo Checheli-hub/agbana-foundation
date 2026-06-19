@@ -66,20 +66,19 @@ const createNodemailerTransporter = async () => {
 };
 
 const getSenderEmail = () => {
-  const fromEmail = process.env.FROM_EMAIL;
-  if (fromEmail) return fromEmail;
+  const parseEmailAddress = (value) => {
+    if (!value) return null;
+    const trimmed = String(value).trim();
+    const match = trimmed.match(/<([^>]+)>/);
+    return match ? match[1].trim() : trimmed;
+  };
 
-  // Resend: use default if not specified
-  if (process.env.RESEND_API_KEY) {
-    return "onboarding@resend.dev";
-  }
+  const fromAddress =
+    parseEmailAddress(process.env.FROM_EMAIL) ||
+    parseEmailAddress(process.env.SMTP_USER) ||
+    "noreply@agbanafoundation.com";
 
-  // SMTP: use SMTP_USER
-  if (process.env.SMTP_USER) {
-    return process.env.SMTP_USER;
-  }
-
-  return "noreply@example.com";
+  return `Agbana Foundation <${fromAddress}>`;
 };
 
 /**
