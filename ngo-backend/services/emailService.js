@@ -154,17 +154,17 @@ export const sendEmail = async (to, subject, text, html) => {
 /**
  * Send verification email
  */
+const getClientUrl = () => {
+  return process.env.CLIENT_URL;
+};
+
 export const getVerificationBaseUrl = () => {
-  return (
-    process.env.BACKEND_URL ||
-    process.env.API_BASE_URL ||
-    "http://localhost:5000"
-  );
+  return getClientUrl();
 };
 
 export const sendVerificationEmail = async (to, username, token) => {
-  const verificationBaseUrl = getVerificationBaseUrl();
-  const verifyLink = `${verificationBaseUrl}/auth/verify?token=${token}`;
+  const clientUrl = getClientUrl();
+  const verifyLink = `${clientUrl}/auth/verify?token=${token}`;
 
   const text = `Hello ${username},\n\nThanks for registering. Please verify your email by visiting the link below:\n\n${verifyLink}\n\nYour username is ${username}.\n\nIf you didn't request this, ignore this message.`;
 
