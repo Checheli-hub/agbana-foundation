@@ -176,10 +176,6 @@ export const sendVerificationEmail = async (to, username, token) => {
 /**
  * Send approval email
  */
-const getClientUrl = () => {
-  return process.env.CLIENT_URL;
-};
-
 export const sendApprovalEmail = async (to, username) => {
   const clientUrl = getClientUrl();
   const loginLink = `${clientUrl}/login`;
