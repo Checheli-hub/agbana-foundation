@@ -244,6 +244,7 @@ export default function App() {
                 </RequireAdmin>
               }
             />
+            <Route path="/auth/verify" element={<Verify />} />
             <Route path="/verify" element={<Verify />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
