@@ -10,8 +10,10 @@ import {
   initializeEmailService,
   validateEmailConfig,
 } from "./services/emailService.js";
+import { initializeCloudinary } from "./services/cloudinaryService.js";
 
 dotenv.config();
+initializeCloudinary();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

@@ -1,5 +1,15 @@
 import express from "express";
+import multer from "multer";
 import Beneficiary from "../models/Beneficiary.js";
+import {
+  uploadPassportImage,
+  isCloudinaryConfigured,
+} from "../services/cloudinaryService.js";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 const router = express.Router();
 
@@ -84,6 +94,28 @@ router.get("/", async (req, res) => {
   }
 });
 
+const isDataUri = (value) =>
+  typeof value === "string" && value.trim().startsWith("data:");
+
+const getPassportUrl = async (passportValue, file) => {
+  if (file) {
+    return await uploadPassportImage({
+      buffer: file.buffer,
+      mimetype: file.mimetype,
+    });
+  }
+
+  if (isDataUri(passportValue)) {
+    return await uploadPassportImage(passportValue);
+  }
+
+  if (typeof passportValue === "string") {
+    return passportValue.trim();
+  }
+
+  return "";
+};
+
 // GET /beneficiaries/:id
 router.get("/:id", async (req, res) => {
   try {
@@ -98,7 +130,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST /beneficiaries
-router.post("/", async (req, res) => {
+router.post("/", upload.single("passport"), async (req, res) => {
   try {
     const {
       fullName,
@@ -118,10 +150,26 @@ router.post("/", async (req, res) => {
       });
     }
 
+    let passportUrl = "";
+    if (req.file || passport) {
+      if (!isCloudinaryConfigured() && (req.file || isDataUri(passport))) {
+        return res.status(500).json({
+          error:
+            "Passport image upload requires Cloudinary configuration on the server.",
+        });
+      }
+
+      try {
+        passportUrl = await getPassportUrl(passport, req.file);
+      } catch (uploadError) {
+        return res.status(400).json({ error: uploadError.message });
+      }
+    }
+
     const newBeneficiary = new Beneficiary({
       fullName,
       phone,
-      passport,
+      passport: passportUrl,
       category: category || "New Beneficiary",
       empowermentType,
       dateAdded,
@@ -196,12 +244,11 @@ router.post("/import", async (req, res) => {
 });
 
 // PUT /beneficiaries/:id
-router.put("/:id", async (req, res) => {
+router.put("/:id", upload.single("passport"), async (req, res) => {
   try {
     const allowedFields = [
       "fullName",
       "phone",
-      "passport",
       "category",
       "empowermentType",
       "dateAdded",
@@ -213,6 +260,27 @@ router.put("/:id", async (req, res) => {
     for (const field of allowedFields) {
       if (Object.prototype.hasOwnProperty.call(req.body, field)) {
         update[field] = req.body[field];
+      }
+    }
+
+    if (
+      req.file ||
+      Object.prototype.hasOwnProperty.call(req.body, "passport")
+    ) {
+      if (
+        !isCloudinaryConfigured() &&
+        (req.file || isDataUri(req.body.passport))
+      ) {
+        return res.status(500).json({
+          error:
+            "Passport image upload requires Cloudinary configuration on the server.",
+        });
+      }
+
+      try {
+        update.passport = await getPassportUrl(req.body.passport, req.file);
+      } catch (uploadError) {
+        return res.status(400).json({ error: uploadError.message });
       }
     }
 
