@@ -49,7 +49,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   const rowTop = 58;
   const imageSize = 28;
   const imagePadding = 5;
-  const rowHeight = imageSize + imagePadding * 2 + 6;
+  const rowHeight = imageSize + imagePadding * 2 + 10;
   const imageColWidth = imageSize + imagePadding * 2;
   const columnWidths = [imageColWidth, 60, 48, 48, 48];
   const startX = 16;
@@ -64,7 +64,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   });
 
   doc.setFont("helvetica", "normal");
-  y += 12;
+  y += 18;
 
   if (!beneficiaries || beneficiaries.length === 0) {
     doc.text(
@@ -76,12 +76,13 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   }
 
   for (const item of beneficiaries) {
-    if (y > 170) {
+    if (y + rowHeight > 170) {
       doc.addPage();
       y = rowTop;
     }
 
     x = startX;
+    const textY = y + imageSize / 2 + 4;
 
     // draw image if available, or fallback placeholder
     const imgData = await loadImageDataUrl(item.passport);
@@ -92,7 +93,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
           imgData,
           fmt,
           x + imagePadding,
-          y - imagePadding,
+          y,
           imageSize,
           imageSize,
         );
@@ -100,12 +101,12 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
         drawPlaceholderImage(
           doc,
           x + imagePadding,
-          y - imagePadding,
+          y + imageSize,
           imageSize,
         );
       }
     } else {
-      drawPlaceholderImage(doc, x + imagePadding, y - imagePadding, imageSize);
+      drawPlaceholderImage(doc, x + imagePadding, y + imageSize, imageSize);
     }
     x += columnWidths[0];
 
@@ -119,7 +120,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
     // write values starting after the image column
     rowValues.forEach((value, index) => {
       const text = String(value || "—");
-      doc.text(text, x + 2, y);
+      doc.text(text, x + 2, textY);
       x += columnWidths[index + 1];
     });
     y += rowHeight;
@@ -184,7 +185,7 @@ export async function createPastBeneficiariesReport(
   });
 
   doc.setFont("helvetica", "normal");
-  y += 12;
+  y += 18;
 
   if (!beneficiaries || beneficiaries.length === 0) {
     doc.text("No past beneficiaries available for this report.", startX, y + 6);
@@ -192,12 +193,13 @@ export async function createPastBeneficiariesReport(
   }
 
   for (const item of beneficiaries) {
-    if (y > 170) {
+    if (y + rowHeight > 170) {
       doc.addPage();
       y = rowTop;
     }
 
     x = startX;
+    const textY = y + imageSize / 2 + 4;
 
     if (includeImages) {
       const imgData = await loadImageDataUrl(item.passport);
@@ -208,7 +210,7 @@ export async function createPastBeneficiariesReport(
             imgData,
             fmt,
             x + imagePadding,
-            y - imagePadding,
+            y,
             imageSize,
             imageSize,
           );
@@ -216,7 +218,7 @@ export async function createPastBeneficiariesReport(
           drawPlaceholderImage(
             doc,
             x + imagePadding,
-            y - imagePadding,
+            y + imageSize,
             imageSize,
           );
         }
@@ -224,13 +226,13 @@ export async function createPastBeneficiariesReport(
         drawPlaceholderImage(
           doc,
           x + imagePadding,
-          y - imagePadding,
+          y + imageSize,
           imageSize,
         );
       }
     } else {
       doc.setDrawColor(220, 220, 220);
-      doc.rect(x + imagePadding, y - imagePadding, imageSize, imageSize);
+      doc.rect(x + imagePadding, y, imageSize, imageSize);
     }
     x += columnWidths[0];
 
@@ -244,7 +246,7 @@ export async function createPastBeneficiariesReport(
 
     rowValues.forEach((value, index) => {
       const text = String(value || "—");
-      doc.text(text, x + 2, y);
+      doc.text(text, x + 2, textY);
       x += columnWidths[index + 1];
     });
     y += rowHeight;
