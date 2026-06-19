@@ -165,7 +165,7 @@ export async function createPastBeneficiariesReport(ngoName, beneficiaries) {
   const imageSize = 28;
   const imagePadding = 5;
   const imageColWidth = imageSize + imagePadding * 2;
-  const columnWidths = [imageColWidth, 52, 44, 44, 44, 44];
+  const columnWidths = [imageColWidth, 50, 50, 50, 50, 50];
   const startX = 16;
   let y = rowTop;
 
@@ -193,29 +193,8 @@ export async function createPastBeneficiariesReport(ngoName, beneficiaries) {
 
     x = startX;
 
-    const imgData = await loadImageDataUrl(item.passport);
-    if (imgData) {
-      const fmt = imgData.startsWith("data:image/png") ? "PNG" : "JPEG";
-      try {
-        doc.addImage(
-          imgData,
-          fmt,
-          x + imagePadding,
-          y - imagePadding,
-          imageSize,
-          imageSize,
-        );
-      } catch {
-        drawPlaceholderImage(
-          doc,
-          x + imagePadding,
-          y - imagePadding,
-          imageSize,
-        );
-      }
-    } else {
-      drawPlaceholderImage(doc, x + imagePadding, y - imagePadding, imageSize);
-    }
+    doc.setDrawColor(220, 220, 220);
+    doc.rect(x + imagePadding, y - imagePadding, imageSize, imageSize);
     x += columnWidths[0];
 
     const rowValues = [
@@ -226,7 +205,6 @@ export async function createPastBeneficiariesReport(ngoName, beneficiaries) {
       item.dateAdded ? new Date(item.dateAdded).toLocaleDateString() : "",
     ];
 
-    // write values starting after the image column
     rowValues.forEach((value, index) => {
       const text = String(value || "—");
       doc.text(text, x + 2, y);
