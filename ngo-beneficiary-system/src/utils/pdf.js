@@ -49,6 +49,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   const rowTop = 58;
   const imageSize = 28;
   const imagePadding = 5;
+  const rowHeight = imageSize + imagePadding * 2 + 6;
   const imageColWidth = imageSize + imagePadding * 2;
   const columnWidths = [imageColWidth, 60, 48, 48, 48];
   const startX = 16;
@@ -121,7 +122,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
       doc.text(text, x + 2, y);
       x += columnWidths[index + 1];
     });
-    y += 34;
+    y += rowHeight;
   }
 
   return doc;
@@ -168,6 +169,7 @@ export async function createPastBeneficiariesReport(
   const rowTop = 58;
   const imageSize = 28;
   const imagePadding = 5;
+  const rowHeight = imageSize + imagePadding * 2 + 6;
   const imageColWidth = imageSize + imagePadding * 2;
   const columnWidths = [imageColWidth, 50, 50, 50, 50, 50];
   const startX = 16;
@@ -192,7 +194,7 @@ export async function createPastBeneficiariesReport(
   for (const item of beneficiaries) {
     if (y > 170) {
       doc.addPage();
-      y = 20;
+      y = rowTop;
     }
 
     x = startX;
@@ -245,7 +247,7 @@ export async function createPastBeneficiariesReport(
       doc.text(text, x + 2, y);
       x += columnWidths[index + 1];
     });
-    y += 34;
+    y += rowHeight;
   }
 
   return doc;
