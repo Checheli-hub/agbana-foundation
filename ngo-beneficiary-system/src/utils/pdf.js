@@ -147,7 +147,11 @@ const pastHeaders = [
   "Date Added",
 ];
 
-export async function createPastBeneficiariesReport(ngoName, beneficiaries) {
+export async function createPastBeneficiariesReport(
+  ngoName,
+  beneficiaries,
+  includeImages = false,
+) {
   const doc = new jsPDF({ orientation: "landscape" });
   const now = new Date();
   const dateLabel = now.toLocaleString();
@@ -193,8 +197,39 @@ export async function createPastBeneficiariesReport(ngoName, beneficiaries) {
 
     x = startX;
 
-    doc.setDrawColor(220, 220, 220);
-    doc.rect(x + imagePadding, y - imagePadding, imageSize, imageSize);
+    if (includeImages) {
+      const imgData = await loadImageDataUrl(item.passport);
+      if (imgData) {
+        const fmt = imgData.startsWith("data:image/png") ? "PNG" : "JPEG";
+        try {
+          doc.addImage(
+            imgData,
+            fmt,
+            x + imagePadding,
+            y - imagePadding,
+            imageSize,
+            imageSize,
+          );
+        } catch {
+          drawPlaceholderImage(
+            doc,
+            x + imagePadding,
+            y - imagePadding,
+            imageSize,
+          );
+        }
+      } else {
+        drawPlaceholderImage(
+          doc,
+          x + imagePadding,
+          y - imagePadding,
+          imageSize,
+        );
+      }
+    } else {
+      doc.setDrawColor(220, 220, 220);
+      doc.rect(x + imagePadding, y - imagePadding, imageSize, imageSize);
+    }
     x += columnWidths[0];
 
     const rowValues = [
@@ -217,6 +252,6 @@ export async function createPastBeneficiariesReport(ngoName, beneficiaries) {
 }
 
 export async function generatePastBeneficiariesPdf(ngoName, beneficiaries) {
-  const doc = await createPastBeneficiariesReport(ngoName, beneficiaries);
+  const doc = await createPastBeneficiariesReport(ngoName, beneficiaries, true);
   doc.save("past-beneficiaries-report.pdf");
 }
