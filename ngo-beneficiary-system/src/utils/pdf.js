@@ -53,6 +53,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   const imageColWidth = imageSize + imagePadding * 2;
   const columnWidths = [imageColWidth, 60, 48, 48, 48];
   const startX = 16;
+  const pageHeight = doc.internal.pageSize.height;
   let y = rowTop;
 
   doc.setFontSize(11);
@@ -76,9 +77,17 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   }
 
   for (const item of beneficiaries) {
-    if (y + rowHeight > 170) {
+    if (y + rowHeight > pageHeight - 18) {
       doc.addPage();
-      y = rowTop;
+      // redraw headers on the new page
+      x = startX;
+      doc.setFont("helvetica", "bold");
+      printHeaders.forEach((header, index) => {
+        doc.text(header, x + 2, rowTop);
+        x += columnWidths[index];
+      });
+      doc.setFont("helvetica", "normal");
+      y = rowTop + 18;
     }
 
     x = startX;
@@ -89,21 +98,9 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
     if (imgData) {
       const fmt = imgData.startsWith("data:image/png") ? "PNG" : "JPEG";
       try {
-        doc.addImage(
-          imgData,
-          fmt,
-          x + imagePadding,
-          y,
-          imageSize,
-          imageSize,
-        );
+        doc.addImage(imgData, fmt, x + imagePadding, y, imageSize, imageSize);
       } catch {
-        drawPlaceholderImage(
-          doc,
-          x + imagePadding,
-          y + imageSize,
-          imageSize,
-        );
+        drawPlaceholderImage(doc, x + imagePadding, y + imageSize, imageSize);
       }
     } else {
       drawPlaceholderImage(doc, x + imagePadding, y + imageSize, imageSize);
@@ -174,6 +171,7 @@ export async function createPastBeneficiariesReport(
   const imageColWidth = imageSize + imagePadding * 2;
   const columnWidths = [imageColWidth, 50, 50, 50, 50, 50];
   const startX = 16;
+  const pageHeight = doc.internal.pageSize.height;
   let y = rowTop;
 
   doc.setFontSize(11);
@@ -193,9 +191,17 @@ export async function createPastBeneficiariesReport(
   }
 
   for (const item of beneficiaries) {
-    if (y + rowHeight > 170) {
+    if (y + rowHeight > pageHeight - 18) {
       doc.addPage();
-      y = rowTop;
+      // redraw headers on the new page
+      x = startX;
+      doc.setFont("helvetica", "bold");
+      pastHeaders.forEach((header, index) => {
+        doc.text(header, x + 2, rowTop);
+        x += columnWidths[index];
+      });
+      doc.setFont("helvetica", "normal");
+      y = rowTop + 18;
     }
 
     x = startX;
@@ -206,29 +212,12 @@ export async function createPastBeneficiariesReport(
       if (imgData) {
         const fmt = imgData.startsWith("data:image/png") ? "PNG" : "JPEG";
         try {
-          doc.addImage(
-            imgData,
-            fmt,
-            x + imagePadding,
-            y,
-            imageSize,
-            imageSize,
-          );
+          doc.addImage(imgData, fmt, x + imagePadding, y, imageSize, imageSize);
         } catch {
-          drawPlaceholderImage(
-            doc,
-            x + imagePadding,
-            y + imageSize,
-            imageSize,
-          );
+          drawPlaceholderImage(doc, x + imagePadding, y + imageSize, imageSize);
         }
       } else {
-        drawPlaceholderImage(
-          doc,
-          x + imagePadding,
-          y + imageSize,
-          imageSize,
-        );
+        drawPlaceholderImage(doc, x + imagePadding, y + imageSize, imageSize);
       }
     } else {
       doc.setDrawColor(220, 220, 220);
