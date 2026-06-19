@@ -49,12 +49,17 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   const rowTop = 58;
   const imageSize = 28;
   const imagePadding = 5;
-  const rowHeight = imageSize + imagePadding * 2 + 10;
   const imageColWidth = imageSize + imagePadding * 2;
   const columnWidths = [imageColWidth, 60, 48, 48, 48];
   const startX = 16;
   const pageHeight = doc.internal.pageSize.height;
-  let y = rowTop;
+  const headerOffset = 18; // distance from header line to first row
+  const minRowHeight = imageSize + imagePadding * 2 + 6;
+  const startY = rowTop + headerOffset;
+  // compute row height so exactly 3 rows fit per page (respecting a small bottom margin)
+  const availableHeight = pageHeight - startY - 18;
+  const rowHeight = Math.max(minRowHeight, Math.floor(availableHeight / 3));
+  let y = startY;
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
@@ -65,7 +70,6 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   });
 
   doc.setFont("helvetica", "normal");
-  y += 18;
 
   if (!beneficiaries || beneficiaries.length === 0) {
     doc.text(
@@ -87,7 +91,7 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
         x += columnWidths[index];
       });
       doc.setFont("helvetica", "normal");
-      y = rowTop + 18;
+      y = startY;
     }
 
     x = startX;
@@ -167,12 +171,16 @@ export async function createPastBeneficiariesReport(
   const rowTop = 58;
   const imageSize = 28;
   const imagePadding = 5;
-  const rowHeight = imageSize + imagePadding * 2 + 18;
   const imageColWidth = imageSize + imagePadding * 2;
   const columnWidths = [imageColWidth, 50, 50, 50, 50, 50];
   const startX = 16;
   const pageHeight = doc.internal.pageSize.height;
-  let y = rowTop;
+  const headerOffset = 18;
+  const minRowHeight = imageSize + imagePadding * 2 + 6;
+  const startY = rowTop + headerOffset;
+  const availableHeight = pageHeight - startY - 18;
+  const rowHeight = Math.max(minRowHeight, Math.floor(availableHeight / 3));
+  let y = startY;
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
@@ -183,7 +191,6 @@ export async function createPastBeneficiariesReport(
   });
 
   doc.setFont("helvetica", "normal");
-  y += 18;
 
   if (!beneficiaries || beneficiaries.length === 0) {
     doc.text("No past beneficiaries available for this report.", startX, y + 6);
@@ -201,7 +208,7 @@ export async function createPastBeneficiariesReport(
         x += columnWidths[index];
       });
       doc.setFont("helvetica", "normal");
-      y = rowTop + 18;
+      y = startY;
     }
 
     x = startX;
