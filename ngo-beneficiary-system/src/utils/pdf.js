@@ -169,7 +169,7 @@ export async function createPastBeneficiariesReport(
   const rowTop = 58;
   const imageSize = 28;
   const imagePadding = 5;
-  const rowHeight = imageSize + imagePadding * 2 + 6;
+  const rowHeight = imageSize + imagePadding * 2 + 18;
   const imageColWidth = imageSize + imagePadding * 2;
   const columnWidths = [imageColWidth, 50, 50, 50, 50, 50];
   const startX = 16;
