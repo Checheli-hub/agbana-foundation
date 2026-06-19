@@ -59,7 +59,8 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   // compute row height so exactly 3 rows fit per page (respecting a small bottom margin)
   const availableHeight = pageHeight - startY - 18;
   const rowHeight = Math.max(minRowHeight, Math.floor(availableHeight / 3));
-  let y = startY;
+  // print headers at the header rowTop, then start rows at startY
+  let y = rowTop;
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
@@ -70,7 +71,8 @@ export async function createCalledBeneficiariesReport(ngoName, beneficiaries) {
   });
 
   doc.setFont("helvetica", "normal");
-
+  // move down to the first data row
+  y = startY;
   if (!beneficiaries || beneficiaries.length === 0) {
     doc.text(
       "No called beneficiaries available for this report.",
@@ -180,7 +182,8 @@ export async function createPastBeneficiariesReport(
   const startY = rowTop + headerOffset;
   const availableHeight = pageHeight - startY - 18;
   const rowHeight = Math.max(minRowHeight, Math.floor(availableHeight / 3));
-  let y = startY;
+  // print headers at the header rowTop, then start rows at startY
+  let y = rowTop;
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
@@ -191,7 +194,8 @@ export async function createPastBeneficiariesReport(
   });
 
   doc.setFont("helvetica", "normal");
-
+  // move down to the first data row
+  y = startY;
   if (!beneficiaries || beneficiaries.length === 0) {
     doc.text("No past beneficiaries available for this report.", startX, y + 6);
     return doc;
