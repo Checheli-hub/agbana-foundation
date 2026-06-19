@@ -5,6 +5,7 @@ import { useSessionStorage } from "./hooks/useSessionStorage.jsx";
 import { fetchBeneficiariesPaginated } from "./services/beneficiaryService.js";
 import { getUsers } from "./services/authService.js";
 import Sidebar from "./components/Sidebar.jsx";
+import AppFooter from "./components/AppFooter.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Beneficiaries from "./pages/Beneficiaries.jsx";
 import Called from "./pages/Called.jsx";
@@ -246,6 +247,8 @@ export default function App() {
             <Route path="/verify" element={<Verify />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+
+          <AppFooter />
         </main>
       </div>
     </BrowserRouter>
