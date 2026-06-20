@@ -268,19 +268,7 @@ router.post("/register", async (req, res) => {
     });
 
     if (existingUser) {
-      if (
-        existingUser.username === normalizedUsername &&
-        existingUser.email === normalizedEmail
-      ) {
-        const responseObj = {
-          success: true,
-          message: "Email verified successfully",
-        };
-        console.log("Returning /auth/verify response:", responseObj);
-        return res.status(200).json(responseObj);
-      } else {
-        return res.status(400).json({ error: "Email is already in use." });
-      }
+      return res.status(400).json({ error: "Email is already in use." });
     }
 
     const verificationToken = crypto.randomBytes(20).toString("hex");
@@ -656,10 +644,9 @@ router.get("/verify", async (req, res) => {
       .then((r) => console.info("Welcome email result:", r))
       .catch((e) => console.error("Welcome email error:", e));
 
-    return res.status(200).json({
-      success: true,
-      message: "Email verified successfully",
-    });
+    const responseObj = { success: true, message: "Email verified successfully" };
+    console.log("Returning /auth/verify response:", responseObj);
+    return res.status(200).json(responseObj);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
