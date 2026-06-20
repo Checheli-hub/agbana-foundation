@@ -261,10 +261,10 @@ export default function AdminSettings({
     }
   };
 
-  const handlePromoteUser = async (username) => {
+  const handlePromoteUser = async (username, email) => {
     resetToast();
     try {
-      const response = await promoteUser(username);
+      const response = await promoteUser(username, email);
       setStaffUsers(response.users);
       setToast({
         message: `${username} has been promoted to Admin.`,
@@ -409,10 +409,10 @@ export default function AdminSettings({
     }
   };
 
-  const handleDemoteAdmin = async (username) => {
+  const handleDemoteAdmin = async (username, email) => {
     resetToast();
     try {
-      const response = await demoteUser(username);
+      const response = await demoteUser(username, email);
       setStaffUsers(response.users);
       setToast({ message: `${username} demoted.`, variant: "success" });
     } catch (error) {
@@ -831,7 +831,9 @@ export default function AdminSettings({
                     <button
                       type="button"
                       className="button-secondary button-small"
-                      onClick={() => handlePromoteUser(user.username)}
+                      onClick={() =>
+                        handlePromoteUser(user.username, user.email)
+                      }
                     >
                       Promote
                     </button>
@@ -888,7 +890,9 @@ export default function AdminSettings({
                     <button
                       type="button"
                       className="button-secondary button-small"
-                      onClick={() => handleDemoteAdmin(user.username)}
+                      onClick={() =>
+                        handleDemoteAdmin(user.username, user.email)
+                      }
                     >
                       Demote
                     </button>

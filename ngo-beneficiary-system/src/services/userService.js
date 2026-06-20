@@ -71,12 +71,28 @@ export function updateStaffUser(users, username, updates) {
   );
 }
 
-export function promoteStaffUser(users, username) {
-  return updateStaffUser(users, username, { role: "Admin" });
+export function updateStaffUserByIdentifier(users, username, email, updates) {
+  const normalizedUsername = normalizeValue(username);
+  const normalizedEmail = normalizeValue(email);
+
+  return users.map((user) => {
+    const matchesUsername = username
+      ? normalizeValue(user.username) === normalizedUsername
+      : true;
+    const matchesEmail = email
+      ? normalizeValue(user.email) === normalizedEmail
+      : true;
+
+    return matchesUsername && matchesEmail ? { ...user, ...updates } : user;
+  });
 }
 
-export function demoteStaffUser(users, username) {
-  return updateStaffUser(users, username, { role: "User" });
+export function promoteStaffUser(users, username, email) {
+  return updateStaffUserByIdentifier(users, username, email, { role: "Admin" });
+}
+
+export function demoteStaffUser(users, username, email) {
+  return updateStaffUserByIdentifier(users, username, email, { role: "User" });
 }
 
 export function loadStaffUsers() {

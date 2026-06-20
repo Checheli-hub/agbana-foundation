@@ -272,30 +272,30 @@ export async function signOut() {
   }
 }
 
-export async function promoteUser(username) {
+export async function promoteUser(username, email) {
   if (hasBackend()) {
     return requestBackend("/auth/promote", {
       method: "POST",
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username, email }),
     });
   }
 
   const users = loadStaffUsers();
-  const updatedUsers = promoteStaffUser(users, username);
+  const updatedUsers = promoteStaffUser(users, username, email);
   saveStaffUsers(updatedUsers);
   return { users: updatedUsers };
 }
 
-export async function demoteUser(username) {
+export async function demoteUser(username, email) {
   if (hasBackend()) {
     return requestBackend("/auth/demote", {
       method: "POST",
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username, email }),
     });
   }
 
   const users = loadStaffUsers();
-  const updatedUsers = demoteStaffUser(users, username);
+  const updatedUsers = demoteStaffUser(users, username, email);
   saveStaffUsers(updatedUsers);
   return { users: updatedUsers };
 }

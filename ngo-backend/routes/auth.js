@@ -634,7 +634,10 @@ router.get("/verify", async (req, res) => {
       isVerified: user.isVerified,
     });
 
-    const responseObj = { success: true, message: "Email verified successfully" };
+    const responseObj = {
+      success: true,
+      message: "Email verified successfully",
+    };
     console.log("Returning /auth/verify response:", responseObj);
     return res.status(200).json(responseObj);
   } catch (error) {
@@ -654,9 +657,7 @@ router.post("/approve", async (req, res) => {
     }
 
     if (!username && !email) {
-      return res
-        .status(400)
-        .json({ error: "Username or email is required." });
+      return res.status(400).json({ error: "Username or email is required." });
     }
 
     const user = email
@@ -717,9 +718,7 @@ router.post("/disapprove", async (req, res) => {
     }
 
     if (!username && !email) {
-      return res
-        .status(400)
-        .json({ error: "Username or email is required." });
+      return res.status(400).json({ error: "Username or email is required." });
     }
 
     const user = email
@@ -1069,7 +1068,7 @@ router.get("/audit-logs", async (req, res) => {
 // POST /auth/promote
 router.post("/promote", async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, email } = req.body;
 
     if (!isSuperAdminSession(req)) {
       return res
@@ -1077,12 +1076,17 @@ router.post("/promote", async (req, res) => {
         .json({ error: "Only a super admin may promote users." });
     }
 
-    if (!username) {
-      return res.status(400).json({ error: "Username is required." });
+    if (!username && !email) {
+      return res.status(400).json({ error: "Username or email is required." });
     }
 
+    const query = {
+      ...(username ? caseInsensitiveQuery("username", username) : {}),
+      ...(email ? caseInsensitiveQuery("email", email) : {}),
+    };
+
     const user = await User.findOneAndUpdate(
-      caseInsensitiveQuery("username", username),
+      query,
       {
         role: "Admin",
       },
@@ -1122,7 +1126,7 @@ router.post("/promote", async (req, res) => {
 // POST /auth/demote
 router.post("/demote", async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, email } = req.body;
 
     if (!isSuperAdminSession(req)) {
       return res
@@ -1130,12 +1134,17 @@ router.post("/demote", async (req, res) => {
         .json({ error: "Only a super admin may demote users." });
     }
 
-    if (!username) {
-      return res.status(400).json({ error: "Username is required." });
+    if (!username && !email) {
+      return res.status(400).json({ error: "Username or email is required." });
     }
 
+    const query = {
+      ...(username ? caseInsensitiveQuery("username", username) : {}),
+      ...(email ? caseInsensitiveQuery("email", email) : {}),
+    };
+
     const user = await User.findOneAndUpdate(
-      caseInsensitiveQuery("username", username),
+      query,
       { role: "User" },
       { new: true },
     );
