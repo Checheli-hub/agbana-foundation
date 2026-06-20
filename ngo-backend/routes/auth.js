@@ -603,26 +603,28 @@ router.get("/users", async (req, res) => {
 
 // GET /auth/verify?token=...
 router.get("/verify", async (req, res) => {
+  console.log("STEP 1: verify route hit");
   try {
     const { token } = req.query;
-    if (!token)
+    console.log("STEP 2: token received", token);
+
+    if (!token) {
       return res.status(400).json({ error: "Verification token is required." });
+    }
 
     const user = await User.findOne({ verificationToken: token });
-    console.log("USER FOUND:", {
+    console.log("STEP 3: user found", {
       userId: user?._id,
       email: user?.email,
+      verificationToken: user?.verificationToken,
       isVerified: user?.isVerified,
-      mongooseConnection: {
-        host: mongoose.connection && mongoose.connection.host,
-        name: mongoose.connection && mongoose.connection.name,
-        readyState: mongoose.connection && mongoose.connection.readyState,
-      },
     });
-    if (!user)
+
+    if (!user) {
       return res
         .status(404)
         .json({ error: "Invalid or expired verification token." });
+    }
 
     if (
       user.verificationTokenExpiry &&
@@ -631,32 +633,17 @@ router.get("/verify", async (req, res) => {
       return res.status(410).json({ error: "Verification token has expired." });
     }
 
+    console.log("STEP 4: about to save user");
     user.isVerified = true;
     user.verificationToken = null;
     user.verificationTokenExpiry = null;
-    await user.save();
 
-    console.log("✓ User saved - Before post-check:", {
+    await user.save();
+    console.log("STEP 5: user saved", {
       userId: user._id,
       email: user.email,
       isVerified: user.isVerified,
     });
-
-    const checkUser = await User.findById(user._id);
-    console.log("✓ Post-save DB verification check:", {
-      userId: checkUser._id,
-      email: checkUser.email,
-      isVerified: checkUser.isVerified,
-      verificationToken: checkUser.verificationToken,
-      verificationTokenExpiry: checkUser.verificationTokenExpiry,
-    });
-
-    const postSaveCheck = await User.findById(user._id);
-    console.log("POST SAVE CHECK:", { userId: postSaveCheck._id, isVerified: postSaveCheck.isVerified });
-
-    sendWelcomeEmail(user.email, user.username, user.isApproved)
-      .then((r) => console.info("Welcome email result:", r))
-      .catch((e) => console.error("Welcome email error:", e));
 
     const responseObj = { success: true, message: "Email verified successfully" };
     console.log("Returning /auth/verify response:", responseObj);
