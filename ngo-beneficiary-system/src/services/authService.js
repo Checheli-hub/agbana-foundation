@@ -146,11 +146,11 @@ export async function createAdmin({ username, email, password }) {
   };
 }
 
-export async function approveUser(username) {
+export async function approveUser(username, email) {
   if (hasBackend()) {
     return requestBackend("/auth/approve", {
       method: "POST",
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username, email }),
     });
   }
 
@@ -164,11 +164,11 @@ export async function approveUser(username) {
   return { users: updated };
 }
 
-export async function disapproveUser(username) {
+export async function disapproveUser(username, email) {
   if (hasBackend()) {
     return requestBackend("/auth/disapprove", {
       method: "POST",
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username, email }),
     });
   }
 

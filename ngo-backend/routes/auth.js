@@ -645,7 +645,7 @@ router.get("/verify", async (req, res) => {
 // POST /auth/approve
 router.post("/approve", async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, email } = req.body;
 
     if (!isSuperAdminSession(req)) {
       return res
@@ -653,11 +653,15 @@ router.post("/approve", async (req, res) => {
         .json({ error: "Only a super admin may approve accounts." });
     }
 
-    if (!username) {
-      return res.status(400).json({ error: "Username is required." });
+    if (!username && !email) {
+      return res
+        .status(400)
+        .json({ error: "Username or email is required." });
     }
 
-    const user = await User.findOne(caseInsensitiveQuery("username", username));
+    const user = email
+      ? await User.findOne(caseInsensitiveQuery("email", email))
+      : await User.findOne(caseInsensitiveQuery("username", username));
 
     if (!user) {
       return res.status(404).json({ error: "User not found." });
@@ -704,7 +708,7 @@ router.post("/approve", async (req, res) => {
 // POST /auth/disapprove
 router.post("/disapprove", async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, email } = req.body;
 
     if (!isSuperAdminSession(req)) {
       return res
@@ -712,11 +716,15 @@ router.post("/disapprove", async (req, res) => {
         .json({ error: "Only a super admin may disapprove accounts." });
     }
 
-    if (!username) {
-      return res.status(400).json({ error: "Username is required." });
+    if (!username && !email) {
+      return res
+        .status(400)
+        .json({ error: "Username or email is required." });
     }
 
-    const user = await User.findOne(caseInsensitiveQuery("username", username));
+    const user = email
+      ? await User.findOne(caseInsensitiveQuery("email", email))
+      : await User.findOne(caseInsensitiveQuery("username", username));
 
     if (!user) {
       return res.status(404).json({ error: "User not found." });

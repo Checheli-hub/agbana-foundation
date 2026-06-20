@@ -278,10 +278,10 @@ export default function AdminSettings({
     }
   };
 
-  const handleApproveUser = async (username) => {
+  const handleApproveUser = async (username, email) => {
     resetToast();
     try {
-      const response = await approveUser(username);
+      const response = await approveUser(username, email);
       setStaffUsers(response.users);
       setToast({ message: `${username} approved.`, variant: "success" });
     } catch (error) {
@@ -292,10 +292,10 @@ export default function AdminSettings({
     }
   };
 
-  const handleDisapproveUser = async (username) => {
+  const handleDisapproveUser = async (username, email) => {
     resetToast();
     try {
-      const response = await disapproveUser(username);
+      const response = await disapproveUser(username, email);
       setStaffUsers(response.users);
       setToast({ message: `${username} disapproved.`, variant: "success" });
 
@@ -305,7 +305,7 @@ export default function AdminSettings({
       const timeoutId = window.setTimeout(() => {
         setRecentlyDisapproved(null);
       }, 60000);
-      setRecentlyDisapproved({ username, timeoutId });
+      setRecentlyDisapproved({ username, email, timeoutId });
     } catch (error) {
       setToast({
         message: error.message || "Unable to disapprove user.",
@@ -354,10 +354,11 @@ export default function AdminSettings({
     }
   };
 
-  const handleUndoDisapprove = async (username) => {
+  const handleUndoDisapprove = async () => {
     resetToast();
     try {
-      const response = await approveUser(username);
+      const { username, email } = recentlyDisapproved || {};
+      const response = await approveUser(username, email);
       setStaffUsers(response.users);
       setToast({
         message: `${username} restored to approved.`,
@@ -823,7 +824,7 @@ export default function AdminSettings({
                       <button
                         type="button"
                         className="button-primary button-small"
-                        onClick={() => handleApproveUser(user.username)}
+                        onClick={() => handleApproveUser(user.username, user.email)}
                       >
                         Approve
                       </button>
@@ -831,7 +832,7 @@ export default function AdminSettings({
                       <button
                         type="button"
                         className="button-secondary button-small"
-                        onClick={() => handleDisapproveUser(user.username)}
+                        onClick={() => handleDisapproveUser(user.username, user.email)}
                       >
                         Disapprove
                       </button>
