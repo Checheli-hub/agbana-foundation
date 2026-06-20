@@ -21,20 +21,14 @@ export default function Verify() {
       };
     }
 
-    const API_BASE = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, "");
+    const API_BASE =
+      import.meta.env.VITE_API_URL?.trim()?.replace(/\/+$/, "") || "";
 
     const setError = (msg) => {
       if (!mounted) return;
       setStatus("error");
       setMessage(msg || "Verification failed.");
     };
-
-    if (!API_BASE) {
-      setError("Verification service is not configured.");
-      return () => {
-        mounted = false;
-      };
-    }
 
     requestTokenRef.current = token;
 
@@ -67,10 +61,12 @@ export default function Verify() {
           setError(errorMessage);
         }
       } catch (err) {
-        console.error("Verification request error:", err);
+        console.error("Verification error:", err);
         if (!mounted) return;
         setError(
-          "Verification request failed. Please check your network and try again.",
+          err?.response?.data?.message ||
+            err?.message ||
+            "Verification failed. Please try again.",
         );
       }
     };
