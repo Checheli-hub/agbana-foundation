@@ -30,6 +30,18 @@ export default function AdminSettings({
       ? currentUser.username
       : currentUser;
   const navigate = useNavigate();
+  const formatDisplayName = (name) =>
+    String(name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) =>
+        word.length > 0
+          ? `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}`
+          : "",
+      )
+      .join(" ");
+
   const [toast, setToast] = useState({ message: "", variant: "success" });
   const [loadingStaffUsers, setLoadingStaffUsers] = useState(
     !staffUsers.length,
@@ -267,7 +279,7 @@ export default function AdminSettings({
       const response = await promoteUser(username, email);
       setStaffUsers(response.users);
       setToast({
-        message: `${username} has been promoted to Admin.`,
+        message: `${getDisplayUsername(username)} has been promoted to Admin.`,
         variant: "success",
       });
     } catch (error) {
@@ -278,12 +290,17 @@ export default function AdminSettings({
     }
   };
 
+  const getDisplayUsername = (username) => formatDisplayName(username || "");
+
   const handleApproveUser = async (username, email) => {
     resetToast();
     try {
       const response = await approveUser(username, email);
       setStaffUsers(response.users);
-      setToast({ message: `${username} approved.`, variant: "success" });
+      setToast({
+        message: `${getDisplayUsername(username)} approved.`,
+        variant: "success",
+      });
     } catch (error) {
       setToast({
         message: error.message || "Unable to approve user.",
@@ -297,7 +314,10 @@ export default function AdminSettings({
     try {
       const response = await disapproveUser(username, email);
       setStaffUsers(response.users);
-      setToast({ message: `${username} disapproved.`, variant: "success" });
+      setToast({
+        message: `${getDisplayUsername(username)} disapproved.`,
+        variant: "success",
+      });
 
       if (recentlyDisapproved && recentlyDisapproved.timeoutId) {
         clearTimeout(recentlyDisapproved.timeoutId);
@@ -373,7 +393,7 @@ export default function AdminSettings({
       const response = await approveUser(username, email);
       setStaffUsers(response.users);
       setToast({
-        message: `${username} restored to approved.`,
+        message: `${getDisplayUsername(username)} restored to approved.`,
         variant: "success",
       });
       if (recentlyDisapproved && recentlyDisapproved.timeoutId) {
@@ -396,7 +416,10 @@ export default function AdminSettings({
         ? response.users
         : (await getUsers())?.users || [];
       setStaffUsers(restoredUsers);
-      setToast({ message: `${username} restored.`, variant: "success" });
+      setToast({
+        message: `${getDisplayUsername(username)} restored.`,
+        variant: "success",
+      });
       if (recentlyDeleted && recentlyDeleted.timeoutId) {
         clearTimeout(recentlyDeleted.timeoutId);
       }
@@ -414,7 +437,10 @@ export default function AdminSettings({
     try {
       const response = await demoteUser(username, email);
       setStaffUsers(response.users);
-      setToast({ message: `${username} demoted.`, variant: "success" });
+      setToast({
+        message: `${getDisplayUsername(username)} demoted.`,
+        variant: "success",
+      });
     } catch (error) {
       setToast({
         message: error.message || "Unable to demote user.",
@@ -433,7 +459,10 @@ export default function AdminSettings({
 
     // Restore in UI immediately
     setStaffUsers((prev) => [restored, ...prev]);
-    setToast({ message: `${restored.username} restored.`, variant: "success" });
+    setToast({
+      message: `${getDisplayUsername(restored.username)} restored.`,
+      variant: "success",
+    });
 
     // Attempt backend restore (best-effort)
     try {
@@ -522,8 +551,8 @@ export default function AdminSettings({
               <div>
                 <h3>User deleted</h3>
                 <p>
-                  {recentlyDeleted.username} was deleted. Undo within 60 seconds
-                  to keep the account.
+                  {getDisplayUsername(recentlyDeleted.username)} was deleted.
+                  Undo within 60 seconds to keep the account.
                 </p>
               </div>
               <div className="button-group">
@@ -551,8 +580,8 @@ export default function AdminSettings({
               <div>
                 <h3>User disapproved</h3>
                 <p>
-                  {recentlyDisapproved.username} was disapproved. Undo within 60
-                  seconds if this was a mistake.
+                  {getDisplayUsername(recentlyDisapproved.username)} was
+                  disapproved. Undo within 60 seconds if this was a mistake.
                 </p>
               </div>
               <div className="button-group">
@@ -817,7 +846,7 @@ export default function AdminSettings({
                   className="admin-row"
                 >
                   <div>
-                    <strong>{user.username}</strong>
+                    <strong>{getDisplayUsername(user.username)}</strong>
                     <p>{user.email}</p>
                   </div>
                   <div className="button-group">
@@ -883,7 +912,7 @@ export default function AdminSettings({
                   className="admin-row"
                 >
                   <div>
-                    <strong>{user.username}</strong>
+                    <strong>{getDisplayUsername(user.username)}</strong>
                     <p>{user.email}</p>
                   </div>
                   {user.username !== currentUsername && (
