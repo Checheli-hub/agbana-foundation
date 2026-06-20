@@ -264,9 +264,7 @@ router.post("/register", async (req, res) => {
     const normalizedUsername = username.toLowerCase().trim();
     const normalizedEmail = email.toLowerCase().trim();
 
-    const existingUser = await User.findOne({
-      $or: [{ username: normalizedUsername }, { email: normalizedEmail }],
-    });
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return res.status(400).json({ error: "Email is already in use." });
@@ -357,14 +355,10 @@ router.post("/initialize", async (req, res) => {
     const normalizedUsername = username.toLowerCase().trim();
     const normalizedEmail = email.toLowerCase().trim();
 
-    const existingUser = await User.findOne({
-      $or: [{ username: normalizedUsername }, { email: normalizedEmail }],
-    });
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
-      return res.status(400).json({
-        error: "Username or email is already in use.",
-      });
+      return res.status(400).json({ error: "Email is already in use." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -414,16 +408,11 @@ router.post("/admin", async (req, res) => {
     }
 
     const existingUser = await User.findOne({
-      $or: [
-        { username: username.toLowerCase().trim() },
-        { email: email.toLowerCase().trim() },
-      ],
+      email: email.toLowerCase().trim(),
     });
 
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ error: "Username or email is already in use." });
+      return res.status(400).json({ error: "Email is already in use." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
