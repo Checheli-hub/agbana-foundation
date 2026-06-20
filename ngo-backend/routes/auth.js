@@ -2,6 +2,7 @@ import express from "express";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import rateLimit from "express-rate-limit";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import AuditLog from "../models/AuditLog.js";
 import {
@@ -608,6 +609,16 @@ router.get("/verify", async (req, res) => {
       return res.status(400).json({ error: "Verification token is required." });
 
     const user = await User.findOne({ verificationToken: token });
+    console.log("USER FOUND:", {
+      userId: user?._id,
+      email: user?.email,
+      isVerified: user?.isVerified,
+      mongooseConnection: {
+        host: mongoose.connection && mongoose.connection.host,
+        name: mongoose.connection && mongoose.connection.name,
+        readyState: mongoose.connection && mongoose.connection.readyState,
+      },
+    });
     if (!user)
       return res
         .status(404)
@@ -639,6 +650,9 @@ router.get("/verify", async (req, res) => {
       verificationToken: checkUser.verificationToken,
       verificationTokenExpiry: checkUser.verificationTokenExpiry,
     });
+
+    const postSaveCheck = await User.findById(user._id);
+    console.log("POST SAVE CHECK:", { userId: postSaveCheck._id, isVerified: postSaveCheck.isVerified });
 
     sendWelcomeEmail(user.email, user.username, user.isApproved)
       .then((r) => console.info("Welcome email result:", r))

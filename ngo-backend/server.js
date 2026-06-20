@@ -99,6 +99,15 @@ mongoose
   .connect(MONGODB_URI)
   .then(async () => {
     console.log("✓ Connected to MongoDB:", MONGODB_URI.substring(0, 50) + "...");
+    try {
+      console.log("Mongoose connection details:", {
+        host: mongoose.connection && mongoose.connection.host,
+        name: mongoose.connection && mongoose.connection.name,
+        readyState: mongoose.connection && mongoose.connection.readyState,
+      });
+    } catch (e) {
+      console.warn("Unable to read mongoose.connection details:", e.message);
+    }
 
     // Validate and initialize email service
     validateEmailConfig();
