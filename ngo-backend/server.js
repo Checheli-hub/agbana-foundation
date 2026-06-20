@@ -94,10 +94,11 @@ app.get("/health", (req, res) => {
 });
 
 // MongoDB Connection
+console.log("🗄️ MongoDB URI:", MONGODB_URI.substring(0, 50) + "...");
 mongoose
   .connect(MONGODB_URI)
   .then(async () => {
-    console.log("✓ Connected to MongoDB");
+    console.log("✓ Connected to MongoDB:", MONGODB_URI.substring(0, 50) + "...");
 
     // Validate and initialize email service
     validateEmailConfig();

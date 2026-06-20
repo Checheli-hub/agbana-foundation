@@ -636,6 +636,21 @@ router.get("/verify", async (req, res) => {
     user.verificationTokenExpiry = null;
     await user.save();
 
+    console.log("✓ User saved - Before post-check:", {
+      userId: user._id,
+      email: user.email,
+      isVerified: user.isVerified,
+    });
+
+    const checkUser = await User.findById(user._id);
+    console.log("✓ Post-save DB verification check:", {
+      userId: checkUser._id,
+      email: checkUser.email,
+      isVerified: checkUser.isVerified,
+      verificationToken: checkUser.verificationToken,
+      verificationTokenExpiry: checkUser.verificationTokenExpiry,
+    });
+
     sendWelcomeEmail(user.email, user.username, user.isApproved)
       .then((r) => console.info("Welcome email result:", r))
       .catch((e) => console.error("Welcome email error:", e));
