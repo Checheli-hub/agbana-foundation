@@ -74,10 +74,57 @@ const caseInsensitiveQuery = (field, value) => ({
   [field]: { $regex: new RegExp(`^${escapeRegex(value.trim())}$`, "i") },
 });
 
-const getSessionUser = (req) => req.session?.user || null;
+const extractBearerToken = (req) => {
+  const header = req.headers?.authorization || req.get?.("authorization");
+  if (header && typeof header === "string") {
+    const parts = header.split(" ");
+    if (parts.length === 2 && /^Bearer$/i.test(parts[0])) return parts[1];
+  }
+  // support accessToken in query for compatibility/testing
+  if (req.query && req.query.accessToken) return req.query.accessToken;
+  return null;
+};
 
-const isSuperAdminSession = (req) => {
-  const user = getSessionUser(req);
+const getSessionUser = async (req) => {
+  if (req.session?.user) return req.session.user;
+
+  const token = extractBearerToken(req);
+  if (!token) return null;
+
+  try {
+    const user = await User.findOne({
+      accessToken: token,
+      accessTokenExpiry: { $gt: new Date() },
+      isDeleted: { $ne: true },
+    });
+
+    if (!user) return null;
+
+    const normalizedRole = normalizeRole(user.role);
+    const sessionUser = {
+      username: user.username,
+      email: user.email,
+      role: normalizedRole,
+      isSuperAdmin: Boolean(user.isSuperAdmin),
+    };
+
+    try {
+      req.session.user = sessionUser;
+      req.session.accessToken = token;
+      req.session.accessTokenExpiry = user.accessTokenExpiry;
+    } catch (e) {
+      // If session can't be created, still return the user object for checks
+    }
+
+    return sessionUser;
+  } catch (error) {
+    console.error("Error loading user by accessToken:", error.message);
+    return null;
+  }
+};
+
+const isSuperAdminSession = async (req) => {
+  const user = await getSessionUser(req);
   return Boolean(user && user.role === "Admin" && user.isSuperAdmin === true);
 };
 
@@ -214,6 +261,8 @@ router.post("/login", async (req, res) => {
 
     user.refreshToken = newRefreshToken;
     user.refreshTokenExpiry = refreshTokenExpiry;
+    user.accessToken = newAccessToken;
+    user.accessTokenExpiry = accessTokenExpiry;
     await user.save();
 
     await regenerateSession(req);
@@ -395,7 +444,7 @@ router.post("/admin", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    if (!isSuperAdminSession(req)) {
+    if (!(await isSuperAdminSession(req))) {
       return res.status(403).json({
         error: "Only a super admin may create new admin accounts.",
       });
@@ -650,7 +699,7 @@ router.post("/approve", async (req, res) => {
   try {
     const { username, email } = req.body;
 
-    if (!isSuperAdminSession(req)) {
+    if (!(await isSuperAdminSession(req))) {
       return res
         .status(403)
         .json({ error: "Only a super admin may approve accounts." });
@@ -711,7 +760,7 @@ router.post("/disapprove", async (req, res) => {
   try {
     const { username, email } = req.body;
 
-    if (!isSuperAdminSession(req)) {
+    if (!(await isSuperAdminSession(req))) {
       return res
         .status(403)
         .json({ error: "Only a super admin may disapprove accounts." });
@@ -771,7 +820,7 @@ router.post("/delete", async (req, res) => {
   try {
     const { username } = req.body;
 
-    if (!isSuperAdminSession(req)) {
+    if (!(await isSuperAdminSession(req))) {
       return res
         .status(403)
         .json({ error: "Only a super admin may delete accounts." });
@@ -841,7 +890,7 @@ router.post("/restore", async (req, res) => {
   try {
     const { username } = req.body;
 
-    if (!isSuperAdminSession(req)) {
+    if (!(await isSuperAdminSession(req))) {
       return res
         .status(403)
         .json({ error: "Only a super admin may restore accounts." });
@@ -987,6 +1036,8 @@ router.post("/refresh-token", async (req, res) => {
 
     user.refreshToken = newRefreshToken;
     user.refreshTokenExpiry = refreshTokenExpiry;
+    user.accessToken = newAccessToken;
+    user.accessTokenExpiry = accessTokenExpiry;
     await user.save();
 
     await regenerateSession(req);
@@ -1020,7 +1071,7 @@ router.post("/refresh-token", async (req, res) => {
 // GET /auth/audit-logs (Super Admin only)
 router.get("/audit-logs", async (req, res) => {
   try {
-    if (!isSuperAdminSession(req)) {
+    if (!(await isSuperAdminSession(req))) {
       return res.status(403).json({
         error: "Only super admin may view audit logs.",
       });
@@ -1070,7 +1121,7 @@ router.post("/promote", async (req, res) => {
   try {
     const { username, email } = req.body;
 
-    if (!isSuperAdminSession(req)) {
+    if (!(await isSuperAdminSession(req))) {
       return res
         .status(403)
         .json({ error: "Only a super admin may promote users." });
@@ -1128,7 +1179,7 @@ router.post("/demote", async (req, res) => {
   try {
     const { username, email } = req.body;
 
-    if (!isSuperAdminSession(req)) {
+    if (!(await isSuperAdminSession(req))) {
       return res
         .status(403)
         .json({ error: "Only a super admin may demote users." });

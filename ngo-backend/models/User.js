@@ -90,6 +90,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    accessToken: {
+      type: String,
+      default: null,
+    },
+    accessTokenExpiry: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );
