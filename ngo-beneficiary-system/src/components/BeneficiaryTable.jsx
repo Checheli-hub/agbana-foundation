@@ -110,7 +110,7 @@ export default function BeneficiaryTable({
               <col className="col-attended" style={{ width: "130px" }} />
             )}
             {hasActions && (
-              <col className="col-actions" style={{ width: "200px" }} />
+              <col className="col-actions" style={{ width: "260px" }} />
             )}
           </colgroup>
           <thead>

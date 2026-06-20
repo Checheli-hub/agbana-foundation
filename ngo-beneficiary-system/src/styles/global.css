@@ -1041,9 +1041,9 @@ a {
 
 .beneficiary-table th.actions-header,
 .beneficiary-table col.col-actions {
-  width: 190px;
-  min-width: 170px;
-  max-width: 220px;
+  width: 260px;
+  min-width: 240px;
+  max-width: 300px;
   text-align: center;
 }
 
@@ -1054,6 +1054,12 @@ a {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.beneficiary-table td.actions-cell {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .beneficiary-table td.cell-text {
@@ -1276,10 +1282,14 @@ a {
   border-radius: 8px;
   display: inline-grid;
   place-items: center;
+  flex-shrink: 0;
+  overflow: visible;
 }
 
 .icon-btn svg {
   display: block;
+  width: 16px;
+  height: 16px;
 }
 
 .action-btn-primary {
