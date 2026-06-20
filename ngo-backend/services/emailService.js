@@ -81,6 +81,15 @@ const getSenderEmail = () => {
   return `Agbana Foundation <${fromAddress}>`;
 };
 
+const capitalizeName = (name) => {
+  if (!name) return "";
+  return String(name)
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+};
+
 /**
  * Send email via Resend or nodemailer
  * @param {string} to - Recipient email
@@ -165,10 +174,11 @@ export const getVerificationBaseUrl = () => {
 export const sendVerificationEmail = async (to, username, token) => {
   const clientUrl = getClientUrl();
   const verifyLink = `${clientUrl}/auth/verify?token=${token}`;
+  const properName = capitalizeName(username);
 
-  const text = `Hello ${username},\n\nThanks for registering. Please verify your email by visiting the link below:\n\n${verifyLink}\n\nYour username is ${username}.\n\nIf you didn't request this, ignore this message.`;
+  const text = `Hello ${properName},\n\nThanks for registering. Please verify your email by visiting the link below:\n\n${verifyLink}\n\nYour username is ${username}.\n\nIf you didn't request this, ignore this message.`;
 
-  const html = `<p>Hello ${username},</p><p>Thanks for registering. Please verify your email by clicking the link below:</p><p><a href="${verifyLink}" target="_blank" rel="noopener noreferrer">${verifyLink}</a></p><p>Your username is <strong>${username}</strong>.</p><p>If clicking the link does not open correctly, right-click and open it in a new tab or copy-paste the URL into your browser.</p><p>If you didn't request this, ignore this message.</p>`;
+  const html = `<p>Hello ${properName},</p><p>Thanks for registering. Please verify your email by clicking the link below:</p><p><a href="${verifyLink}" target="_blank" rel="noopener noreferrer">${verifyLink}</a></p><p>Your username is <strong>${username}</strong>.</p><p>If clicking the link does not open correctly, right-click and open it in a new tab or copy-paste the URL into your browser.</p><p>If you didn't request this, ignore this message.</p>`;
 
   return sendEmail(to, "Verify your account", text, html);
 };
@@ -179,10 +189,11 @@ export const sendVerificationEmail = async (to, username, token) => {
 export const sendApprovalEmail = async (to, username) => {
   const clientUrl = getClientUrl();
   const loginLink = `${clientUrl}/login`;
+  const properName = capitalizeName(username);
 
-  const text = `Hello ${username},\n\nCongratulations! Your account has been approved by an administrator. You can now log in to the NGO Beneficiary Management System.\n\nOpen or copy this URL in your browser:\n${loginLink}\n\nUsername: ${username}\n\nIf you have any questions, please contact the administrator.`;
+  const text = `Hello ${properName},\n\nCongratulations! Your account has been approved by an administrator. You can now log in to the NGO Beneficiary Management System.\n\nOpen or copy this URL in your browser:\n${loginLink}\n\nUsername: ${username}\n\nIf you have any questions, please contact the administrator.`;
 
-  const html = `<p>Hello ${username},</p><p>Congratulations! Your account has been <strong>approved</strong> by an administrator.</p><p>You can now log in to the NGO Beneficiary Management System:</p><p><a href="${loginLink}" target="_blank" rel="noopener noreferrer">${loginLink}</a></p><p><strong>Username:</strong> ${username}</p><p>If the link does not open correctly, right-click and open it in a new tab or copy-paste the URL into your browser.</p><p>If you have any questions, please contact the administrator.</p>`;
+  const html = `<p>Hello ${properName},</p><p>Congratulations! Your account has been <strong>approved</strong> by an administrator.</p><p>You can now log in to the NGO Beneficiary Management System:</p><p><a href="${loginLink}" target="_blank" rel="noopener noreferrer">${loginLink}</a></p><p><strong>Username:</strong> ${username}</p><p>If the link does not open correctly, right-click and open it in a new tab or copy-paste the URL into your browser.</p><p>If you have any questions, please contact the administrator.</p>`;
 
   return sendEmail(to, "Your account has been approved", text, html);
 };
@@ -190,14 +201,15 @@ export const sendApprovalEmail = async (to, username) => {
 export const sendWelcomeEmail = async (to, username, isApproved) => {
   const clientUrl = getClientUrl();
   const loginLink = `${clientUrl}/login`;
+  const properName = capitalizeName(username);
 
   const text = isApproved
-    ? `Hello ${username},\n\nYour email has been verified and your account is approved. You can now log in at:\n\n${loginLink}\n\nUsername: ${username}`
-    : `Hello ${username},\n\nYour email has been verified. An administrator will review and approve your account soon. You will receive another email once your account is approved.`;
+    ? `Hello ${properName},\n\nYour email has been verified and your account is approved. You can now log in at:\n\n${loginLink}\n\nUsername: ${username}`
+    : `Hello ${properName},\n\nYour email has been verified. An administrator will review and approve your account soon. You will receive another email once your account is approved.`;
 
   const html = isApproved
-    ? `<p>Hello ${username},</p><p>Your email has been verified and your account is approved. You can now log in at the link below:</p><p><a href="${loginLink}" target="_blank" rel="noopener noreferrer">${loginLink}</a></p><p><strong>Username:</strong> ${username}</p>`
-    : `<p>Hello ${username},</p><p>Your email has been verified. An administrator will review and approve your account soon.</p><p>You will receive another email once your account is approved.</p>`;
+    ? `<p>Hello ${properName},</p><p>Your email has been verified and your account is approved. You can now log in at the link below:</p><p><a href="${loginLink}" target="_blank" rel="noopener noreferrer">${loginLink}</a></p><p><strong>Username:</strong> ${username}</p>`
+    : `<p>Hello ${properName},</p><p>Your email has been verified. An administrator will review and approve your account soon.</p><p>You will receive another email once your account is approved.</p>`;
 
   return sendEmail(to, "Welcome to Agbana Foundation", text, html);
 };
@@ -205,17 +217,19 @@ export const sendWelcomeEmail = async (to, username, isApproved) => {
 export const sendPasswordResetEmail = async (to, username, token) => {
   const clientUrl = getClientUrl();
   const resetLink = `${clientUrl}/reset-password?token=${token}`;
+  const properName = capitalizeName(username);
 
-  const text = `Hello ${username},\n\nWe received a request to reset your password. Click the link below to choose a new one:\n\n${resetLink}\n\nIf you did not request this, please ignore this email. The link will expire in 1 hour.`;
+  const text = `Hello ${properName},\n\nWe received a request to reset your password. Click the link below to choose a new one:\n\n${resetLink}\n\nIf you did not request this, please ignore this email. The link will expire in 1 hour.`;
 
-  const html = `<p>Hello ${username},</p><p>We received a request to reset your password. Click the link below to choose a new one:</p><p><a href="${resetLink}" target="_blank" rel="noopener noreferrer">Reset your password</a></p><p>If the link does not open correctly, copy and paste the URL into your browser:</p><p>${resetLink}</p><p>This link will expire in 1 hour. If you did not request a password reset, please ignore this message.</p>`;
+  const html = `<p>Hello ${properName},</p><p>We received a request to reset your password. Click the link below to choose a new one:</p><p><a href="${resetLink}" target="_blank" rel="noopener noreferrer">Reset your password</a></p><p>If the link does not open correctly, copy and paste the URL into your browser:</p><p>${resetLink}</p><p>This link will expire in 1 hour. If you did not request a password reset, please ignore this message.</p>`;
 
   return sendEmail(to, "Reset your password", text, html);
 };
 
 export const sendDisapprovalEmail = async (to, username) => {
-  const text = `Hello ${username},\n\nWe reviewed your account registration and it was not approved. If you believe this is an error, please contact the administrator.`;
-  const html = `<p>Hello ${username},</p><p>We reviewed your account registration and it was <strong>not approved</strong>. If you believe this is an error, please contact the administrator.</p>`;
+  const properName = capitalizeName(username);
+  const text = `Hello ${properName},\n\nWe reviewed your account registration and it was not approved. If you believe this is an error, please contact the administrator.`;
+  const html = `<p>Hello ${properName},</p><p>We reviewed your account registration and it was <strong>not approved</strong>. If you believe this is an error, please contact the administrator.</p>`;
   return sendEmail(to, "Account not approved", text, html);
 };
 /**
