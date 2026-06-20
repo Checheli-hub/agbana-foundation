@@ -34,14 +34,22 @@ export default function Verify() {
 
     const runVerification = async () => {
       try {
-        const res = await fetch(
-          `${API_BASE}/auth/verify?token=${encodeURIComponent(token)}`,
-        );
+        const requestUrl = `${API_BASE}/auth/verify?token=${encodeURIComponent(
+          token,
+        )}`;
+        console.log("Verification request URL:", requestUrl);
+
+        const res = await fetch(requestUrl);
+        console.log("Verification response status:", res.status);
+
         const body = await res.json().catch(() => ({}));
+        console.log("Verification response body:", body);
+
         if (!mounted) return;
         if (requestTokenRef.current !== token) return;
 
-        if (res.ok) {
+        // Only treat as success when backend explicitly signals success === true
+        if (res.ok && body && body.success === true) {
           setStatus("success");
           setMessage(
             body.message
@@ -50,7 +58,8 @@ export default function Verify() {
           );
           setTimeout(() => navigate("/login", { replace: true }), 1800);
         } else {
-          let errorMessage = body.error || "Verification failed.";
+          // Prefer backend-provided message fields
+          let errorMessage = body?.error || body?.message || "Verification failed.";
           if (res.status === 404) {
             errorMessage =
               "Invalid or already-used verification token. Use the latest link from your inbox or sign in if your email is already verified.";
@@ -64,9 +73,7 @@ export default function Verify() {
         console.error("Verification error:", err);
         if (!mounted) return;
         setError(
-          err?.response?.data?.message ||
-            err?.message ||
-            "Verification failed. Please try again.",
+          err?.response?.data?.message || err?.message || "Verification failed. Please try again.",
         );
       }
     };
