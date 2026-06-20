@@ -171,9 +171,9 @@ export default function AdminSettings({
       setStaffUsers(response.users);
       if (trimmedUsername !== currentAdmin.username) {
         setCurrentUser({
-        username: trimmedUsername,
-        isSuperAdmin: currentUser?.isSuperAdmin === true,
-      });
+          username: trimmedUsername,
+          isSuperAdmin: currentUser?.isSuperAdmin === true,
+        });
       }
       setUpdatedPassword("");
       setConfirmUpdatedPassword("");
@@ -514,7 +514,7 @@ export default function AdminSettings({
                   to keep the account.
                 </p>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div className="button-group">
                 <button
                   type="button"
                   className="button-warning button-small"
@@ -543,7 +543,7 @@ export default function AdminSettings({
                   seconds if this was a mistake.
                 </p>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div className="button-group">
                 <button
                   type="button"
                   className="button-secondary button-small"
@@ -805,7 +805,7 @@ export default function AdminSettings({
                     <strong>{user.username}</strong>
                     <p>{user.email}</p>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div className="button-group">
                     <button
                       type="button"
                       className="button-primary button-danger button-small"
@@ -824,7 +824,9 @@ export default function AdminSettings({
                       <button
                         type="button"
                         className="button-primary button-small"
-                        onClick={() => handleApproveUser(user.username, user.email)}
+                        onClick={() =>
+                          handleApproveUser(user.username, user.email)
+                        }
                       >
                         Approve
                       </button>
@@ -832,7 +834,9 @@ export default function AdminSettings({
                       <button
                         type="button"
                         className="button-secondary button-small"
-                        onClick={() => handleDisapproveUser(user.username, user.email)}
+                        onClick={() =>
+                          handleDisapproveUser(user.username, user.email)
+                        }
                       >
                         Disapprove
                       </button>

@@ -291,6 +291,63 @@ a {
   justify-content: center;
 }
 
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.button-group button {
+  flex: 0 1 auto;
+  min-width: 100px;
+}
+
+.admin-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-row:last-child {
+  border-bottom: none;
+}
+
+.admin-row > div:first-child {
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.admin-row > div:first-child strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 900px) {
+  .admin-row {
+    align-items: stretch;
+  }
+
+  .button-group {
+    justify-content: stretch;
+  }
+
+  .button-group button {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+
 .button-primary {
   background: linear-gradient(
     135deg,
