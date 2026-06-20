@@ -98,7 +98,10 @@ console.log("🗄️ MongoDB URI:", MONGODB_URI.substring(0, 50) + "...");
 mongoose
   .connect(MONGODB_URI)
   .then(async () => {
-    console.log("✓ Connected to MongoDB:", MONGODB_URI.substring(0, 50) + "...");
+    console.log(
+      "✓ Connected to MongoDB:",
+      MONGODB_URI.substring(0, 50) + "...",
+    );
     try {
       console.log("Mongoose connection details:", {
         host: mongoose.connection && mongoose.connection.host,
