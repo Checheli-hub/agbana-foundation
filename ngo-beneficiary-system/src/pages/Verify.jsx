@@ -23,12 +23,23 @@ export default function Verify() {
 
     const API_BASE =
       import.meta.env.VITE_API_URL?.trim()?.replace(/\/+$/, "") || "";
+    console.log("VERIFY API BASE:", import.meta.env.VITE_API_URL);
 
     const setError = (msg) => {
       if (!mounted) return;
       setStatus("error");
       setMessage(msg || "Verification failed.");
     };
+
+    if (!API_BASE) {
+      console.error("VERIFY API BASE is missing. Aborting verification request.");
+      setError(
+        "Verification service is not configured. Contact support or try again later.",
+      );
+      return () => {
+        mounted = false;
+      };
+    }
 
     requestTokenRef.current = token;
 
