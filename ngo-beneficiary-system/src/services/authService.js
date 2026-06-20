@@ -23,10 +23,14 @@ const hasBackend = () => Boolean(API_BASE_URL);
 
 async function requestBackend(path, options) {
   try {
+    const storedToken = window.localStorage.getItem("accessToken");
+    const authHeader = storedToken ? { Authorization: `Bearer ${storedToken}` } : {};
+
     const response = await fetch(`${API_BASE_URL}${path}`, {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        ...authHeader,
       },
       ...options,
     });
@@ -43,10 +47,20 @@ async function requestBackend(path, options) {
 
 export async function signIn({ username, email, password, role }) {
   if (hasBackend()) {
-    return requestBackend("/auth/login", {
+    const result = await requestBackend("/auth/login", {
       method: "POST",
       body: JSON.stringify({ username, email, password, role }),
     });
+
+    try {
+      if (result?.accessToken) {
+        window.localStorage.setItem("accessToken", result.accessToken);
+      }
+    } catch (e) {
+      /* ignore storage errors */
+    }
+
+    return result;
   }
 
   const users = loadStaffUsers();
@@ -269,6 +283,11 @@ export async function signOut() {
     await requestBackend("/auth/logout", {
       method: "POST",
     });
+  }
+  try {
+    window.localStorage.removeItem("accessToken");
+  } catch (e) {
+    /* ignore */
   }
 }
 
