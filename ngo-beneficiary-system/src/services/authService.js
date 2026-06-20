@@ -24,7 +24,9 @@ const hasBackend = () => Boolean(API_BASE_URL);
 async function requestBackend(path, options) {
   try {
     const storedToken = window.localStorage.getItem("accessToken");
-    const authHeader = storedToken ? { Authorization: `Bearer ${storedToken}` } : {};
+    const authHeader = storedToken
+      ? { Authorization: `Bearer ${storedToken}` }
+      : {};
 
     const response = await fetch(`${API_BASE_URL}${path}`, {
       credentials: "include",
