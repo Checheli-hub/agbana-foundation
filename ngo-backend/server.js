@@ -24,6 +24,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET;
 // Build list of allowed client origins from env; support comma-separated list
 const rawClientUrls = process.env.CLIENT_URL || "";
 const defaultAllowedOrigins = [
+  "https://agbanafoundation.com",
   "https://agbana-foundation.netlify.app",
   "http://localhost:5173",
 ];
@@ -58,7 +59,7 @@ app.use(
       return callback(new Error("CORS origin not allowed."), false);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
