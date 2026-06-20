@@ -105,12 +105,12 @@ export default function BeneficiaryTable({
             {showDateCalled && (
               <col className="col-date-called" style={{ width: "170px" }} />
             )}
-            <col className="col-status" style={{ width: "130px" }} />
+            <col className="col-status" style={{ width: "150px" }} />
             {showAttendedColumn && (
               <col className="col-attended" style={{ width: "130px" }} />
             )}
             {hasActions && (
-              <col className="col-actions" style={{ width: "260px" }} />
+              <col className="col-actions" style={{ width: "320px" }} />
             )}
           </colgroup>
           <thead>

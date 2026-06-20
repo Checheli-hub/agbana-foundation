@@ -1027,9 +1027,9 @@ a {
 
 .beneficiary-table th.status-header,
 .beneficiary-table col.col-status {
-  width: 130px;
-  min-width: 120px;
-  max-width: 140px;
+  width: 150px;
+  min-width: 140px;
+  max-width: 160px;
 }
 
 .beneficiary-table th.attended-header,
@@ -1041,9 +1041,9 @@ a {
 
 .beneficiary-table th.actions-header,
 .beneficiary-table col.col-actions {
-  width: 260px;
-  min-width: 240px;
-  max-width: 300px;
+  width: 320px;
+  min-width: 300px;
+  max-width: 360px;
   text-align: center;
 }
 
