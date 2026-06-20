@@ -272,11 +272,12 @@ router.post("/register", async (req, res) => {
         existingUser.username === normalizedUsername &&
         existingUser.email === normalizedEmail
       ) {
-        return res.status(400).json({
-          error: "Username and email are already in use.",
-        });
-      } else if (existingUser.username === normalizedUsername) {
-        return res.status(400).json({ error: "Username is already in use." });
+        const responseObj = {
+          success: true,
+          message: "Email verified successfully",
+        };
+        console.log("Returning /auth/verify response:", responseObj);
+        return res.status(200).json(responseObj);
       } else {
         return res.status(400).json({ error: "Email is already in use." });
       }
