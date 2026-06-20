@@ -314,38 +314,50 @@ export default function AdminSettings({
     }
   };
 
-  const handleDeleteUser = async (username) => {
+  const handleDeleteUser = async (userToDelete) => {
+    // userToDelete should be the full user object (username + email)
     resetToast();
     try {
-      // Find the full user object so we can restore locally if needed
-      const deletedUser = staffUsers.find((u) => u.username === username);
+      // Find the exact user index so we only remove the intended entry
+      setStaffUsers((prev) => {
+        const idx = prev.findIndex(
+          (u) =>
+            u.username === userToDelete.username &&
+            u.email === userToDelete.email,
+        );
+        if (idx === -1) return prev;
 
-      // Optimistically remove from UI
-      setStaffUsers((prev) => prev.filter((u) => u.username !== username));
+        // Keep a local undo reference to the exact removed user
+        undoAdminRef.current = prev[idx];
 
-      // Keep a local undo reference and schedule clearing
-      undoAdminRef.current = deletedUser || { username };
-      if (deleteTimerRef.current) {
-        window.clearTimeout(deleteTimerRef.current);
-      }
+        // Remove only the specific user instance at idx
+        const next = [...prev.slice(0, idx), ...prev.slice(idx + 1)];
 
-      // Call backend delete (fire-and-forget); UI already updated
-      deleteUser(username).catch((err) =>
+        // Schedule clearing of undo reference
+        if (deleteTimerRef.current) {
+          window.clearTimeout(deleteTimerRef.current);
+        }
+
+        deleteTimerRef.current = window.setTimeout(() => {
+          undoAdminRef.current = null;
+          deleteTimerRef.current = null;
+        }, 60000);
+
+        return next;
+      });
+
+      // Call backend delete (fire-and-forget) using username
+      deleteUser(userToDelete.username).catch((err) =>
         console.error("Backend delete failed", err),
       );
 
       // Show toast with Undo action
       setToast({
-        message: `${username} deleted. Undo is available for 60 seconds.`,
+        message: `${userToDelete.username} deleted. Undo is available for 60 seconds.`,
         variant: "warning",
         actionLabel: "Undo",
         onAction: () => handleUndoDelete(),
       });
-
-      deleteTimerRef.current = window.setTimeout(() => {
-        undoAdminRef.current = null;
-        deleteTimerRef.current = null;
-      }, 60000);
     } catch (error) {
       setToast({
         message: error.message || "Unable to delete user.",
@@ -800,7 +812,10 @@ export default function AdminSettings({
           {userAccounts.length ? (
             <div className="admin-list">
               {userAccounts.map((user) => (
-                <div key={user.username} className="admin-row">
+                <div
+                  key={`${user.username}-${user.email}`}
+                  className="admin-row"
+                >
                   <div>
                     <strong>{user.username}</strong>
                     <p>{user.email}</p>
@@ -809,7 +824,7 @@ export default function AdminSettings({
                     <button
                       type="button"
                       className="button-primary button-danger button-small"
-                      onClick={() => handleDeleteUser(user.username)}
+                      onClick={() => handleDeleteUser(user)}
                     >
                       Delete
                     </button>
@@ -861,7 +876,10 @@ export default function AdminSettings({
           {adminUsers.length ? (
             <div className="admin-list">
               {adminUsers.map((user) => (
-                <div key={user.username} className="admin-row">
+                <div
+                  key={`${user.username}-${user.email}`}
+                  className="admin-row"
+                >
                   <div>
                     <strong>{user.username}</strong>
                     <p>{user.email}</p>
