@@ -105,7 +105,7 @@ export default function BeneficiaryTable({
             {showDateCalled && (
               <col className="col-date-called" style={{ width: "170px" }} />
             )}
-            <col className="col-status" style={{ width: "110px" }} />
+            <col className="col-status" style={{ width: "130px" }} />
             {showAttendedColumn && (
               <col className="col-attended" style={{ width: "130px" }} />
             )}

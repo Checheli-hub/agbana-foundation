@@ -1228,31 +1228,39 @@ a {
 .actions-cell {
   padding: 8px 12px !important;
   text-align: center;
-  min-width: 160px;
+  min-width: 260px;
   display: table-cell;
   vertical-align: middle;
+  overflow: visible !important;
 }
 
 /* ensure status doesn't wrap into actions column */
 .cell-status {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
 .button-group {
-  display: inline-flex !important;
+  display: flex;
   gap: 8px;
   align-items: center;
-  justify-content: center !important;
+  justify-content: center;
   flex-wrap: nowrap;
+  width: 100%;
 }
 
 .actions-cell .button-group {
-  justify-content: center !important;
+  justify-content: center;
+  display: flex;
+  width: 100%;
 }
 
 .beneficiary-table .actions-cell .button-group {
-  justify-content: center !important;
-  display: inline-flex !important;
+  justify-content: center;
+  display: flex;
+  width: 100%;
 }
 
 .action-btn {
@@ -1272,6 +1280,7 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 /* Icon-style compact buttons */
